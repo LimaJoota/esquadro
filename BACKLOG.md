@@ -13,7 +13,7 @@ Cada item traz o que é, por que importa e como saber que está pronto.
 | Versão | Itens |
 |---|---|
 | v0.2 (feita) | Chamadas, notas à mão, quadros, cotas livres, ênfase, certo e errado, níveis de acabamento, perspectiva isométrica básica, objetos, figuras numeradas |
-| v0.3: sketch melhor | EXP-01, EXP-02, EXP-03, EXP-04, EXP-05, SKE-04, SKE-06, QUA-04, QUA-06, DIS-02, DIS-03 |
+| v0.3: sketch melhor | EXP-09, EXP-10, EXP-01, EXP-02, EXP-03, EXP-04, EXP-05, SKE-04, SKE-06, QUA-04, QUA-06, DIS-02, DIS-03 |
 | v0.4: documentos | EXP-06, EXP-07, EXP-08, COR-01, COR-04, COR-05, SKE-03, SKE-05, SKE-07, QUA-02, QUA-11 |
 | v0.5: técnico de verdade | TEC-01, TEC-03, TEC-06, TEC-08, TEC-11, TEC-12, QUA-01, INT-01, IND-01, IND-03 |
 | Depois | Todo o restante |
@@ -75,6 +75,20 @@ Parte das normas citadas com frequência foi substituída entre 2020 e 2022. O m
 - **O que é:** ler um procedimento ou relatório, propor onde uma figura ajuda e qual forma usar, e pedir confirmação antes de desenhar.
 - **Por que importa:** muita gente não sabe qual figura pedir, e o trecho difícil do texto é onde a figura vale mais.
 - **Pronto quando:** em 10 documentos de teste, a maioria das sugestões é aceita por um leitor.
+
+### EXP-09 · Cores de caneta: vermelho e azul · P0
+Pedido do dono do projeto em 04/11/2026, para a próxima versão.
+- **O que é:** tinta de destaque em vermelho e azul, como caneta sobre o lápis, para `ring`, `mark`, notas e setas (`ink="red"`). O desenho base continua grafite.
+- **Por que importa:** uma cor de destaque aponta o olho, e é como se corrige um desenho à mão. É o ganho mais barato: o motor já aceita cor em cada traço.
+- **Avaliação:** viável e pequeno. O risco é a impressora preto e branco: vermelho e azul podem ficar iguais em cinza, então a cor nunca pode ser o único sinal. Tons escolhidos com luminosidade diferente e combinados com traço ou texto. O `COLOR_ONLY` do validador já vigia isso.
+- **Pronto quando:** `ink=` funciona em todas as ferramentas de explicação, o validador passa sem aviso, e o `--gray` continua distinguindo o que importa.
+
+### EXP-10 · Aquarela · P1
+Pedido do dono do projeto em 04/11/2026, para a próxima versão.
+- **O que é:** mancha de cor por baixo do traço, que vaza um pouco do contorno, com variação de tom: `wash(d, pontos, "blue")`. Tecnicamente são os mesmos filtros do tremor (`feTurbulence` e `feDisplacementMap`) com `mix-blend-mode: multiply`.
+- **Por que importa:** dá um acabamento que nenhum concorrente de sketch tem, separa materiais e zonas sem hachura e rende imagens que chamam atenção no README.
+- **Avaliação:** viável, com três cuidados. O filtro vira imagem no PDF do Chrome; programas de escritório podem ignorá-lo e o `multiply`, então precisa de plano B em cor chapada; e aquarela vira cinza em impressora P&B, então só entra como opção, nunca como padrão, com texto sempre fora da mancha.
+- **Pronto quando:** uma figura com aquarela imprime legível em P&B, o PDF sai bom, e há versão sem filtro para quando ele não funciona.
 
 ---
 
