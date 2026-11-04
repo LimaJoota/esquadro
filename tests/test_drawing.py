@@ -35,6 +35,7 @@ def test_fit_view_refuses_a_scale_that_does_not_fit() -> None:
 
 
 def test_decimal_comma_follows_language() -> None:
+    assert format_value(12.5) == "12.5"
     assert format_value(12.5, "pt") == "12,5"
     assert format_value(12.5, "en") == "12.5"
     assert format_value(12.0, "pt") == "12"
@@ -140,21 +141,19 @@ def test_title_too_long_is_refused_not_overflowed() -> None:
 
 
 def test_no_scale_notice_is_automatic() -> None:
-    d = Drawing(100, 60)
-    assert "SEM ESCALA" in d.to_svg()
-    d = Drawing(100, 60, lang="en")
-    assert "NOT TO SCALE" in d.to_svg()
+    assert "NOT TO SCALE" in Drawing(100, 60).to_svg()
+    assert "SEM ESCALA" in Drawing(100, 60, lang="pt").to_svg()
 
 
 def test_declared_scale_is_printed() -> None:
-    d = Drawing(100, 60)
+    d = Drawing(100, 60, lang="pt")
     d.view((10, 10), Scale(1, 20))
     svg = d.to_svg()
     assert "ESCALA 1:20" in svg and 'data-esq-scale="1:20"' in svg
 
 
 def test_schematic_view_says_no_scale() -> None:
-    d = Drawing(100, 60)
+    d = Drawing(100, 60, lang="pt")
     d.view((10, 10), Scale.schematic(0.3))
     assert "SEM ESCALA" in d.to_svg()
 
@@ -276,3 +275,9 @@ def test_valve_actuator_has_a_port_above_the_body() -> None:
     item = valve(d, (30, 25), "FV-1", actuator=True)
     assert item.port("actuator")[1] < 25
     assert math.isclose(item.port("in")[1], 25)
+
+
+def test_empty_text_is_not_emitted() -> None:
+    d = Drawing(100, 60)
+    d.text((10, 10), "   ", "label")
+    assert '<text x="10" y="10"' not in d.to_svg()

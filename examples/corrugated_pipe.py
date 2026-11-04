@@ -146,6 +146,7 @@ def dimension_detail(v: View) -> None:
 def technical() -> Path:
     d = Drawing.sheet(
         "A3",
+        lang="pt",
         title="Tubo corrugado com bolsa",
         description="Double-wall corrugated pipe with socket: half section and profile detail.",
         title_block={"number": "EX-002", "drawn": "Esquadro", "date": "2026-11-04", "rev": "0"},
@@ -185,6 +186,7 @@ def sketch() -> Path:
         220,
         130,
         "sketch",
+        lang="pt",
         title="Tubo corrugado com bolsa (croqui)",
         description="Hand-style sketch of a corrugated pipe with socket.",
     )

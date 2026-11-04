@@ -18,6 +18,8 @@ d = Drawing(180, 120, "sketch", title="...", seed=7, wobble="filter")
 
 `seed` makes the result repeatable. Change it if a stroke lands badly.
 
+Washes follow the same split: `wash="filter"` bleeds and pools, and `wash="flat"` is a plain translucent shape. They default to `flat` when `wobble="geometry"`.
+
 In Chrome's PDF the filter turns the strokes into an image, about 270 dpi on a figure 230 mm wide in testing, with the text still vector. That prints well but will not scale up. Other renderers were not tested: see `BACKLOG.md`.
 
 ## What makes a sketch read well

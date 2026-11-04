@@ -1,34 +1,73 @@
 # Esquadro
 
-A [Claude Code](https://claude.com/claude-code) skill for hand-style sketches that explain things, and for the technical figures that support a document. Self-contained SVG that prints well in black and white, checked by a validator and looked at before delivery.
+[![CI](https://github.com/LimaJoota/esquadro/actions/workflows/ci.yml/badge.svg)](https://github.com/LimaJoota/esquadro/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+Ask for a sketch, get one that explains. A [Claude Code](https://claude.com/claude-code) skill for hand-style drawings in pencil, pen and watercolour, and for the technical figures that support a document. Self-contained SVG, checked for overlapping text and stray lines before you see it.
 
 *Esquadro* is Portuguese for a drafting set square.
 
-![A sketch of a tank and pump in perspective, with numbered callouts and a legend](examples/explain_system.png)
+![A prompt asking to sketch a sink trap, then the sketch building up: pencil, handwriting, red and blue pen, watercolour, and a passing validation](assets/demo.gif)
 
-> **Em português:** skill para fazer croquis que explicam as coisas e figuras que dão suporte a documentos técnicos. Tem chamadas numeradas, notas à mão, sequência em quadros, certo e errado, volumes em perspectiva, pessoas e objetos, e figuras numeradas para o documento. Para quando a medida importa, tem também folhas técnicas com escala e cotas calculadas. O validador pega texto sobre texto, traço cortando texto e elemento fora da folha, e a skill manda sempre olhar a imagem antes de entregar. Instale com o comando abaixo e peça "faz um croqui explicando...". Veja [BACKLOG.md](BACKLOG.md) (em português).
+<sub>Built up in stages for illustration; not a screen recording.</sub>
+
+> **Em português:** skill para fazer croquis que explicam as coisas e figuras que dão suporte a documentos técnicos, a lápis, com caneta vermelha e azul e aquarela. Tem chamadas numeradas, notas à mão, sequência em quadros, certo e errado, volumes em perspectiva, pessoas e objetos, e figuras numeradas para o documento. Para quando a medida importa, tem também folhas técnicas com escala e cotas calculadas. O validador pega texto sobre texto, traço cortando texto e elemento fora da folha, e a skill manda sempre olhar a imagem antes de entregar. Instale com os comandos abaixo e peça "faz um croqui explicando...". Veja [BACKLOG.md](BACKLOG.md) (em português).
 
 ## Install
+
+```bash
+claude plugin marketplace add LimaJoota/esquadro
+```
+
+```bash
+claude plugin install esquadro@esquadro
+```
+
+Or copy it straight into your skills folder:
 
 ```bash
 git clone https://github.com/LimaJoota/esquadro ~/.claude/skills/esquadro
 ```
 
-Then ask Claude to explain something with a drawing: *"sketch how to assemble this pipe joint, in three steps"* or *"faz um croqui mostrando por que precisa calçar a pilha, para o relatório"*.
+Then ask for a drawing: *"sketch how to assemble this pipe joint, in three steps"* or *"faz um croqui mostrando por que precisa calçar a pilha, para o relatório"*.
 
-Needs Python 3.10 or later, standard library only. Tested on 3.14. Rendering and the most accurate text check use a local Chrome, Chromium or Edge. Without one, the validator falls back to bundled font metrics and says so.
+If you run hundreds of other skills, Claude Code may list them without their descriptions, and this one will not start by itself. Ask for it by name: *"use the esquadro skill to..."*.
+
+Needs Python 3.10 or later, standard library only. Rendering and the most accurate text check use a local Chrome, Chromium or Edge. Without one, the validator falls back to bundled font metrics and says so.
+
+## One prompt, one run
+
+> Draw a sketch that explains how a toilet flush tank works, for a home maintenance manual.
+
+![A hand-drawn cutaway of a toilet tank in pencil and watercolour, with seven numbered parts and a legend](examples/from_prompt/flush_tank.png)
+
+Unedited output from a single run. The skill started by itself; nothing in the prompt names it. [The SVG](examples/from_prompt/flush_tank.svg) passes the validator with no errors or warnings.
 
 ## Sketches that explain
 
-Pick the form by what the reader must understand. All of these are from [`examples/`](examples), with their scripts. Content is generic and illustrative.
+The form follows from what the reader must understand. All of these are in [`examples/`](examples), with their scripts. Content is generic and illustrative.
+
+**How something is laid out, and what each part does**
+
+![A tank, pump and piping in perspective with watercolour, numbered callouts and a legend, and a red loop around the pump](examples/explain_system_en.png)
 
 | How to do it, in order | Why one way is better |
 |---|---|
-| ![Three frames assembling a pipe joint](examples/explain_steps.png) | ![Two frames comparing a pipe stack with and without chocks](examples/explain_compare.png) |
+| ![Three frames assembling a pipe joint, with a rubber ring washed in red](examples/explain_steps_en.png) | ![A pipe stack without chocks, marked wrong in red, and with chocks, marked right in blue](examples/explain_compare_en.png) |
 
-| Who does what | The same idea, as a technical sheet when measures matter |
+| Who does what | Why it works |
 |---|---|
-| ![From order to delivery, with people, a document, a shed and a truck](examples/explain_flow.png) | ![Technical sheet: load section at 1:20 with dimensions and a title block](examples/cargo_section_technical.png) |
+| ![From order to delivery, with people, a document, a shed and a truck](examples/explain_flow_en.png) | ![Cut through a sink trap, with the water in blue and the smell stopping at a red cross](examples/explain_cut_en.png) |
+
+## Colour that survives the printer
+
+Pencil is the base. Red pen marks the problem and blue pen the right way, and a watercolour wash separates what the reader must tell apart. In a black-and-white print, the tones stay apart and each mark keeps its shape, so the drawing still reads. `render.py --gray` shows you that print before you make it.
+
+```python
+ring(d, pump["side"], 13, 11, ink="red")           # pen
+hand_note(d, target, at, "the way out", ink="blue")
+iso.cylinder(a, b, r=15, color="blue")             # watercolour
+d.wash(outline, "yellow")
+```
 
 ## Before and after
 
@@ -64,6 +103,7 @@ For when the drawing will be used to measure or build. Each comes in a sheet and
 - **Tools for explaining.** Numbered callouts with a legend, hand notes with curved arrows, frames for steps and comparisons, right and wrong marks, a loop around what matters, free spans such as "≈ 2 m", and three levels of finish.
 - **Things to draw with.** Boxes and cylinders in isometric perspective with hand shading, people, a truck, a building and a document.
 - **Fits in a document.** Figures sized to the A4 text width or half of it, with numbering and cross-references in HTML that stands alone.
+- **Pen and watercolour.** Red and blue inks, and washes that bleed at the edges and pool like pigment, with a flat fallback for programs that ignore SVG filters.
 - **A pencil look that stays readable.** Tremor on the strokes only, through SVG filters or computed strokes, with a handwritten font chosen so the digits are unambiguous.
 - **Technical and industrial modes.** Clean strokes, thick and thin line weights, sheets with frame and title block, first-angle symbol, and a small set of process symbols with named ports and orthogonal connections.
 - **Dimensions from geometry.** A dimension measures the points it is given, through the view's scale. A stated value that disagrees raises an error unless it is marked not to scale, which underlines it. The validator re-checks printed numbers against the drawn lines, so a hand edit is caught too.
@@ -104,8 +144,8 @@ Esquadro is younger and narrower than all of these. No code was copied from any 
 - **A sketch can explain something wrong.** The drawing is checked for legibility, not for whether its content is true.
 - **Not certified to any standard.** Conventions are applied from open sources, and doubts are recorded in [references/standards.md](references/standards.md). Review against the purchased standard when a contract asks for conformity.
 - **Process symbols are simplified** and unverified against ISA-5.1 or ISO 10628. Not for issuing a P&ID.
-- **Rendering tested in Chrome only.** Other browsers, Inkscape and office programs have not been tried.
-- **In Chrome's PDF the sketch filter becomes an image** (about 270 dpi in testing). Text stays vector. `wobble="geometry"` keeps everything vector.
+- **Rendering tested in Chrome only.** Other browsers, Inkscape and office programs have not been tried, nor a real printer.
+- **In Chrome's PDF the sketch and watercolour filters become images** (about 270 dpi in testing). Text stays vector. `wobble="geometry"` keeps everything vector, with flat washes.
 - **The validator misses things a person sees**, such as a leader running through an object or a cramped layout. That is why the skill also makes Claude look.
 
 The plan to close these is in [BACKLOG.md](BACKLOG.md).

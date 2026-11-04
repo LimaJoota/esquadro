@@ -12,10 +12,10 @@ Cada item traz o que é, por que importa e como saber que está pronto.
 
 | Versão | Itens |
 |---|---|
-| v0.2 (feita) | Chamadas, notas à mão, quadros, cotas livres, ênfase, certo e errado, níveis de acabamento, perspectiva isométrica básica, objetos, figuras numeradas |
-| v0.3: sketch melhor | EXP-09, EXP-10, EXP-01, EXP-02, EXP-03, EXP-04, EXP-05, SKE-04, SKE-06, QUA-04, QUA-06, DIS-02, DIS-03 |
-| v0.4: documentos | EXP-06, EXP-07, EXP-08, COR-01, COR-04, COR-05, SKE-03, SKE-05, SKE-07, QUA-02, QUA-11 |
-| v0.5: técnico de verdade | TEC-01, TEC-03, TEC-06, TEC-08, TEC-11, TEC-12, QUA-01, INT-01, IND-01, IND-03 |
+| v0.2 e v0.3 (feitas) | Chamadas, notas à mão, quadros, cotas livres, ênfase, certo e errado, acabamentos, perspectiva básica, objetos, figuras numeradas, canetas, aquarela, plugin, CI |
+| v0.4: sketch melhor | EXP-01, EXP-02, EXP-03, EXP-04, EXP-05, SKE-04, SKE-06, QUA-04, QUA-06 |
+| v0.5: documentos | EXP-06, EXP-07, EXP-08, COR-01, COR-04, COR-05, SKE-03, SKE-05, SKE-07, QUA-02, QUA-11 |
+| v0.6: técnico de verdade | TEC-01, TEC-03, TEC-06, TEC-08, TEC-11, TEC-12, QUA-01, INT-01, IND-01, IND-03 |
 | Depois | Todo o restante |
 
 ## Situação das normas brasileiras
@@ -76,19 +76,15 @@ Parte das normas citadas com frequência foi substituída entre 2020 e 2022. O m
 - **Por que importa:** muita gente não sabe qual figura pedir, e o trecho difícil do texto é onde a figura vale mais.
 - **Pronto quando:** em 10 documentos de teste, a maioria das sugestões é aceita por um leitor.
 
-### EXP-09 · Cores de caneta: vermelho e azul · P0
-Pedido do dono do projeto em 04/11/2026, para a próxima versão.
-- **O que é:** tinta de destaque em vermelho e azul, como caneta sobre o lápis, para `ring`, `mark`, notas e setas (`ink="red"`). O desenho base continua grafite.
-- **Por que importa:** uma cor de destaque aponta o olho, e é como se corrige um desenho à mão. É o ganho mais barato: o motor já aceita cor em cada traço.
-- **Avaliação:** viável e pequeno. O risco é a impressora preto e branco: vermelho e azul podem ficar iguais em cinza, então a cor nunca pode ser o único sinal. Tons escolhidos com luminosidade diferente e combinados com traço ou texto. O `COLOR_ONLY` do validador já vigia isso.
-- **Pronto quando:** `ink=` funciona em todas as ferramentas de explicação, o validador passa sem aviso, e o `--gray` continua distinguindo o que importa.
+### EXP-09 · Cores de caneta: vermelho e azul · feito na v0.3
+- **O que é:** `ink="red"` e `ink="blue"` nas ferramentas de explicar e `with d.pen(...)` em qualquer traço. Falta conferir em impressora de verdade.
+- **Por que importa:** uma cor de destaque aponta o olho, e é como se corrige um desenho à mão.
+- **Pronto quando:** uma página impressa em preto e branco continua distinguindo vermelho, azul e lápis.
 
-### EXP-10 · Aquarela · P1
-Pedido do dono do projeto em 04/11/2026, para a próxima versão.
-- **O que é:** mancha de cor por baixo do traço, que vaza um pouco do contorno, com variação de tom: `wash(d, pontos, "blue")`. Tecnicamente são os mesmos filtros do tremor (`feTurbulence` e `feDisplacementMap`) com `mix-blend-mode: multiply`.
-- **Por que importa:** dá um acabamento que nenhum concorrente de sketch tem, separa materiais e zonas sem hachura e rende imagens que chamam atenção no README.
-- **Avaliação:** viável, com três cuidados. O filtro vira imagem no PDF do Chrome; programas de escritório podem ignorá-lo e o `multiply`, então precisa de plano B em cor chapada; e aquarela vira cinza em impressora P&B, então só entra como opção, nunca como padrão, com texto sempre fora da mancha.
-- **Pronto quando:** uma figura com aquarela imprime legível em P&B, o PDF sai bom, e há versão sem filtro para quando ele não funciona.
+### EXP-10 · Aquarela · feito na v0.3, básico
+- **O que é:** `d.wash()` e `color=` nos sólidos, com borda que vaza e pigmento acumulado, e versão chapada sem filtro. Falta variar a mancha por traço, escorrer e sobrepor com mais naturalidade.
+- **Por que importa:** dá um acabamento diferente e separa materiais sem hachura.
+- **Pronto quando:** numa comparação cega a mancha é aceita como aquarela, e a versão chapada é testada em Word, PowerPoint e Inkscape.
 
 ---
 
@@ -503,17 +499,17 @@ ISO 5456-3.
 
 ## Distribuição
 
-### DIS-01 · Plugin e marketplace · P1
-- **O que é:** manifesto de plugin do Claude Code e entrada em marketplace. **Só publicar com autorização do dono do repositório.**
+### DIS-01 · Plugin e marketplace · manifesto feito na v0.3
+- **O que é:** o manifesto existe e a instalação foi testada numa configuração isolada. Falta entrar em marketplaces de terceiros. **Só publicar com autorização do dono do repositório.**
 - **Por que importa:** é como a maioria vai achar e atualizar.
 - **Pronto quando:** `/plugin install` funciona e a skill é carregada.
 
-### DIS-02 · Versões · P0
-- **O que é:** versão semântica, tags, CHANGELOG e pacote `.skill` em cada release.
+### DIS-02 · Versões · parte feita na v0.3
+- **O que é:** o CHANGELOG já existe. Falta automatizar tags e o pacote `.skill` em cada release.
 - **Por que importa:** quem depende precisa saber o que mudou.
 - **Pronto quando:** cada tag gera um release com o pacote, e a versão em `SKILL.md` confere por teste.
 
-### DIS-03 · CI · P0
+### DIS-03 · CI · feito na v0.3, a confirmar no primeiro envio
 - **O que é:** GitHub Actions com pytest, ruff e black em Linux e macOS, Python 3.10 a 3.14, com Chromium; regera os exemplos e falha se divergirem; varre segredos.
 - **Por que importa:** o README declara Python 3.10 ou mais novo, mas a v0.1 só rodou no 3.14 em macOS.
 - **Pronto quando:** o selo está verde no README, e um PR que quebra exemplo falha.

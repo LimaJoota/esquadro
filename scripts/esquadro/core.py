@@ -11,7 +11,8 @@ import itertools
 import json
 import math
 import random
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Iterator, Sequence
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
 Point = tuple[float, float]
 Rect = tuple[float, float, float, float]  # x, y, width, height
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 FONT_DIR = Path(__file__).resolve().parents[2] / "assets" / "fonts"
 METRICS: dict = json.loads((FONT_DIR / "metrics.json").read_text(encoding="utf-8"))
 
@@ -91,7 +92,7 @@ class Scale:
                 return cls(1, reduce)
         raise ValueError(f"geometry {world_w}x{world_h} does not fit in {avail_w}x{avail_h} at 1:{REDUCTIONS[-1]}")
 
-    def label(self, lang: str = "pt") -> str:
+    def label(self, lang: str = "en") -> str:
         if not self.declared:
             return STRINGS[lang]["no_scale"]
         return f"{self.paper:g}:{self.real:g}"
@@ -163,6 +164,17 @@ STYLES = {
 STYLES["industrial"] = STYLES["technical"]
 
 
+# Pen inks stay distinct in black and white: red prints darker than blue.
+PENS = {"red": "#b3001b", "blue": "#2563c9", "black": "#111111"}
+WASHES = {
+    "blue": "#7fb0e6",
+    "red": "#ea8f7f",
+    "yellow": "#f4cf5d",
+    "green": "#96c98e",
+    "brown": "#c9a27a",
+    "gray": "#a8adb3",
+}
+
 # Sketch finish: tremor amount, tremor frequency, corner overshoot multiplier.
 FINISHES = {
     "napkin": (1.9, 0.07, 1.8),
@@ -183,7 +195,7 @@ def fmt(value: float) -> str:
     return "0" if out in ("-0", "") else out
 
 
-def format_value(value: float, lang: str = "pt", decimals: int | None = None) -> str:
+def format_value(value: float, lang: str = "en", decimals: int | None = None) -> str:
     """Dimension text: whole numbers plain, otherwise rounded, comma decimal in Portuguese."""
     if decimals is None:
         decimals = 0 if abs(value - round(value)) < 0.05 else 1
@@ -237,12 +249,13 @@ class Drawing:
         height: float,
         mode: str = "technical",
         *,
-        lang: str = "pt",
+        lang: str = "en",
         title: str = "",
         description: str = "",
         seed: int = 7,
         wobble: str = "filter",
         finish: str = "study",
+        wash: str | None = None,
         scale_note: bool = True,
     ) -> None:
         if mode not in STYLES:
@@ -252,6 +265,11 @@ class Drawing:
         if finish not in FINISHES:
             raise ValueError(f"unknown finish {finish!r}; use one of {sorted(FINISHES)}")
         self.finish = finish
+        if wash not in (None, "filter", "flat"):
+            raise ValueError("wash must be 'filter' or 'flat'")
+        self._wash_mode = wash or ("flat" if wobble == "geometry" else "filter")
+        self._uses_wash_filter = False
+        self._pen: str | None = None
         self.width, self.height = width, height
         self.mode, self.lang = mode, lang
         self.title_text, self.description = title, description
@@ -312,6 +330,58 @@ class Drawing:
         drawing.area = (left + 4, top + 4, width - left - right - 8, height - top - bottom - block_h - 8)
         return drawing
 
+    # ---- colour ---------------------------------------------------------------------------------
+
+    @property
+    def ink(self) -> str:
+        return self._pen or self.style.ink
+
+    @contextmanager
+    def pen(self, color: str | None) -> Iterator[None]:
+        """Draw with a coloured pen inside the block: 'red', 'blue', or any hex. `None` changes nothing."""
+        keep = self._pen
+        if color is not None:
+            self._pen = PENS.get(color, color)
+        try:
+            yield
+        finally:
+            self._pen = keep
+
+    def wash(self, pts: Sequence[Point], color: str = "blue", *, strength: float = 1.0) -> None:
+        """Watercolour over what is already drawn: pencil shows through. Add it after an outline, before its hatching."""
+        fill = WASHES.get(color, color)
+        opacity = min(1.0, 0.6 * strength)
+        if self._wash_mode == "filter":
+            self._uses_wash_filter = True
+            coords = " ".join(f"{fmt(x)},{fmt(y)}" for x, y in pts)
+            self._geometry.append(
+                f'<polygon points="{coords}" fill="{fill}" fill-opacity="{fmt(opacity)}" stroke="{fill}" '
+                f'stroke-opacity="{fmt(opacity * 0.6)}" stroke-width="0.8" stroke-linejoin="round" '
+                f'filter="url(#{self._wash_filter_id()})" data-esq-role="wash"/>'
+            )
+            return
+        self._geometry.append(
+            f'<path d="{self._hand_path(pts, True)}" fill="{fill}" fill-opacity="{fmt(opacity * 0.8)}" '
+            'stroke="none" data-esq-role="wash"/>'
+        )
+
+    def _wash_filter_id(self) -> str:
+        return f"esq-wash-{self.seed}-{self.width:g}x{self.height:g}"
+
+    def _wash_filter(self) -> str:
+        """Edges bleed through a slow noise and the pigment pools through another, in the alpha channel only."""
+        return (
+            f'<filter id="{self._wash_filter_id()}" filterUnits="userSpaceOnUse" x="0" y="0" '
+            f'width="{fmt(self.width)}" height="{fmt(self.height)}" color-interpolation-filters="sRGB">'
+            f'<feTurbulence type="fractalNoise" baseFrequency="0.07" numOctaves="3" seed="{self.seed + 1}" result="edge"/>'
+            '<feDisplacementMap in="SourceGraphic" in2="edge" scale="3.2" xChannelSelector="R" '
+            'yChannelSelector="G" result="bled"/>'
+            f'<feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="4" seed="{self.seed + 2}" result="tone"/>'
+            '<feColorMatrix in="tone" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2.1 0 0 0 -0.2" result="pool"/>'
+            '<feComposite in="bled" in2="pool" operator="in"/>'
+            "</filter>"
+        )
+
     # ---- text -----------------------------------------------------------------------------------
 
     def size(self, size: float | str) -> float:
@@ -333,6 +403,8 @@ class Drawing:
         attrs: str = "",
     ) -> Rect:
         """Place one line of text and return its axis-aligned box. Baselines are computed, never `dominant-baseline`."""
+        if not text.strip():
+            return (pos[0], pos[1], 0.0, 0.0)
         size_mm = self.size(size)
         metric = METRICS[self.style.font]
         cap = metric["cap"] * size_mm
@@ -352,6 +424,8 @@ class Drawing:
                 f'width="{fmt(box[2] + 2 * pad)}" height="{fmt(box[3] + 2 * pad)}"/>'
             )
         parts = [f'<text x="{fmt(x)}" y="{fmt(y)}" font-size="{fmt(size_mm)}"']
+        if self._pen:
+            parts.append(f' fill="{self._pen}"')
         if anchor != "start":
             parts.append(f' text-anchor="{anchor}"')
         if rotate:
@@ -412,6 +486,8 @@ class Drawing:
     def _stroke_attrs(self, kind: str) -> str:
         line = self._kind(kind)
         out = f'stroke-width="{fmt(line.width)}"'
+        if self._pen:
+            out += f' stroke="{self._pen}"'
         if line.dash:
             out += ' stroke-dasharray="' + " ".join(fmt(d) for d in line.dash) + '"'
         return out
@@ -590,7 +666,7 @@ class Drawing:
             self.line(right, tip, layer_kind)
             return
         coords = " ".join(f"{fmt(x)},{fmt(y)}" for x, y in (tip, left, right))
-        self._layer(layer_kind).append(f'<polygon points="{coords}" fill="{self.style.ink}" stroke="none"/>')
+        self._layer(layer_kind).append(f'<polygon points="{coords}" fill="{self.ink}" stroke="none"/>')
 
     def arrow(self, p1: Point, p2: Point, kind: str = "thin") -> None:
         length = math.dist(p1, p2)
@@ -873,6 +949,8 @@ class Drawing:
         defs = []
         if embed_font:
             defs.append(f"<style>{self._font_face()}</style>")
+        if self._uses_wash_filter:
+            defs.append(self._wash_filter())
         stroke_group = ""
         if self.wobble == "filter":
             defs.append(

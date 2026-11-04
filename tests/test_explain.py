@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import math
 import re
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
 from esquadro import (
+    PENS,
+    WASHES,
     Drawing,
     Figures,
     Iso,
@@ -220,3 +223,129 @@ def test_figure_caption_and_alt_are_escaped(tmp_path: Path) -> None:
     out = Figures("Figure").add("x", svg, "1 < 2 & 3")
     assert "1 &lt; 2 &amp; 3" in out
     assert "Figure 1" in out
+
+
+def test_pen_colours_strokes_text_and_arrowheads_then_stops() -> None:
+    d = Drawing(120, 60, "technical")
+    with d.pen("red"):
+        d.line((10, 10), (80, 10))
+        d.text((10, 30), "vermelho", "label")
+        d.arrow((10, 40), (50, 40))
+    d.line((10, 50), (80, 50))
+    svg = d.to_svg()
+    red = PENS["red"]
+    assert svg.count(f'stroke="{red}"') == 2
+    assert f'<text x="10" y="30" font-size="3.5" fill="{red}"' in svg
+    assert f'fill="{red}" stroke="none"' in svg
+    assert d._pen is None
+    assert 'y1="50"' in svg and f'y2="50" stroke-width="0.5" stroke="{red}"' not in svg
+
+
+def test_pen_restores_after_nesting_and_after_an_error() -> None:
+    d = Drawing(60, 40, "sketch")
+    with d.pen("red"), d.pen("blue"):
+        assert d.ink == PENS["blue"]
+    assert d.ink == d.style.ink
+    with pytest.raises(RuntimeError), d.pen("red"):
+        raise RuntimeError
+    assert d.ink == d.style.ink
+
+
+def test_pen_accepts_hex_and_none() -> None:
+    d = Drawing(60, 40, "sketch")
+    with d.pen("#123456"):
+        assert d.ink == "#123456"
+    with d.pen(None):
+        assert d.ink == d.style.ink
+
+
+def test_red_and_blue_pens_stay_apart_in_black_and_white() -> None:
+    issues, _ = validate(
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><text x="1" y="49" font-size="4">NTS</text>'
+        f'<line x1="0" y1="10" x2="90" y2="10" stroke="{PENS["red"]}"/>'
+        f'<line x1="0" y1="20" x2="90" y2="20" stroke="{PENS["blue"]}"/></svg>',
+        browser=False,
+    )
+    assert "COLOR_ONLY" not in [i.code for i in issues]
+
+
+@pytest.mark.parametrize(
+    "draw",
+    [
+        lambda d: callout(d, (20, 20), 1, (60, 20), ink="red"),
+        lambda d: hand_note(d, (20, 20), (60, 20), "nota", 30, ink="red"),
+        lambda d: span(d, (20, 30), (90, 30), "≈ 2 m", ink="red"),
+        lambda d: ring(d, (40, 20), 10, 8, ink="red"),
+        lambda d: mark(d, (40, 20), True, ink="red"),
+        lambda d: flow_arrow(d, (20, 20), (60, 20), ink="red"),
+    ],
+)
+def test_explaining_tools_take_an_ink(draw: Callable[[Drawing], object]) -> None:
+    d = Drawing.figure("page", 50)
+    draw(d)
+    assert PENS["red"] in d.to_svg()
+    assert errors(d) == []
+
+
+def test_colored_panels_mark_wrong_red_and_right_blue() -> None:
+    d = Drawing.figure("page", 60)
+    panels(d, 2, area=(5, 5, 160, 50), titles=["A", "B"], verdicts=[False, True], colored=True, arrows=False)
+    svg = d.to_svg()
+    assert PENS["red"] in svg and PENS["blue"] in svg
+
+
+def test_wash_uses_its_own_filter_and_is_not_defined_when_unused() -> None:
+    plain = Drawing(60, 40, "sketch").to_svg()
+    assert "esq-wash" not in plain
+    d = Drawing(60, 40, "sketch")
+    d.wash([(5, 5), (30, 5), (30, 20)], "blue")
+    svg = d.to_svg()
+    assert svg.count("<filter") == 2
+    assert f'fill="{WASHES["blue"]}"' in svg and 'data-esq-role="wash"' in svg
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [{"wash": "flat"}, {"wobble": "geometry"}],
+)
+def test_flat_wash_needs_no_filter(kwargs: dict) -> None:
+    d = Drawing(60, 40, "sketch", **kwargs)
+    d.wash([(5, 5), (30, 5), (30, 20)], "blue")
+    svg = d.to_svg()
+    assert "esq-wash" not in svg and 'data-esq-role="wash"' in svg
+    assert errors(d) == []
+
+
+def test_unknown_wash_mode_is_refused() -> None:
+    with pytest.raises(ValueError):
+        Drawing(60, 40, "sketch", wash="spray")
+
+
+def test_translucent_wash_does_not_hide_a_line_through_text() -> None:
+    d = Drawing(120, 60, "sketch")
+    d.line((5, 29), (115, 29), "visible")
+    d.wash([(2, 2), (118, 2), (118, 58), (2, 58)], "blue")
+    d.text((20, 30), "texto cortado", "label")
+    assert any("TEXT_CROSSED" in e for e in errors(d))
+
+
+def test_text_on_a_wash_edge_warns_and_inside_it_does_not() -> None:
+    def codes(x: float) -> list[str]:
+        d = Drawing(120, 60, "sketch")
+        d.wash([(20, 10), (100, 10), (100, 50), (20, 50)], "yellow")
+        d.text((x, 30), "palavra", "label")
+        issues, _ = validate(d.to_svg(), browser=False)
+        return [i.code for i in issues]
+
+    assert "TEXT_ON_WASH_EDGE" not in codes(40)
+    assert "TEXT_ON_WASH_EDGE" in codes(95)
+
+
+def test_solids_take_a_wash() -> None:
+    d = Drawing(120, 100, "sketch")
+    iso = Iso(d, (20, 70), unit=1)
+    iso.box(0, 0, 0, 20, 20, 20, color="yellow")
+    iso.cylinder((40, 0, 0), (40, 0, 30), 8, color="blue")
+    svg = d.to_svg()
+    assert svg.count('data-esq-role="wash"') == 4
+    assert errors(d) == []

@@ -14,7 +14,7 @@ Errors (exit code 1):
 
 Warnings (exit code 0, or 1 with --strict):
   SMALL_TEXT, THIN_STROKE, LOW_CONTRAST, COLOR_ONLY, FONT_NOT_EMBEDDED, TEXT_ESTIMATED, NONSTANDARD_SCALE,
-  LEADER_CROSS
+  LEADER_CROSS, TEXT_ON_WASH_EDGE
 
 Text is measured in a local browser when one is found, and otherwise with bundled font metrics.
 """
@@ -96,6 +96,7 @@ class Shape:
     closed: bool
     role: str | None = None
     clipped: bool = False
+    opaque: bool = True
 
 
 @dataclass
@@ -587,6 +588,7 @@ class Document:
                 closed,
                 node.get("data-esq-role"),
                 clipped,
+                float(style.get("fill-opacity", 1) or 1) * float(style.get("opacity", 1) or 1) >= 0.99,
             )
         )
         if node.get("data-esq-role") == "frame":
@@ -710,7 +712,7 @@ MEASURE_JS = r"""
   const root = svg.getScreenCTM().inverse();
   const out = [];
   for (const el of svg.querySelectorAll('text')) {
-    if (el.closest('defs,symbol,clipPath,mask,pattern,marker')) { out.push(null); continue; }
+    if (el.closest('defs,symbol,clipPath,mask,pattern,marker') || !el.textContent.trim()) { out.push(null); continue; }
     const m = root.multiply(el.getScreenCTM());
     const n = el.getNumberOfChars();
     const lines = [];
@@ -837,7 +839,7 @@ def covered_by_knockout(text: TextItem, seg_order: int, doc: Document) -> bool:
         return True
     box = bbox(text.corners)
     for shape in doc.shapes:
-        if not (seg_order < shape.order < text.order) or not shape.closed or not shape.fill:
+        if not (seg_order < shape.order < text.order) or not shape.closed or not shape.fill or not shape.opaque:
             continue
         pts = [p for seg in shape.segments for p in seg]
         b = bbox(pts)
@@ -847,7 +849,7 @@ def covered_by_knockout(text: TextItem, seg_order: int, doc: Document) -> bool:
 
 
 def filtered(shape: Shape) -> bool:
-    return shape.role in ("underline", "frame", "centering-mark") or shape.label == "esq-paper"
+    return shape.role in ("underline", "frame", "centering-mark", "wash") or shape.label == "esq-paper"
 
 
 def check_text_overlap(doc: Document, tol: float, issues: list[Issue]) -> None:
@@ -1000,6 +1002,17 @@ def check_leaders(doc: Document, issues: list[Issue]) -> None:
                 break
 
 
+def check_washes(doc: Document, tol: float, issues: list[Issue]) -> None:
+    """Text straddling the edge of a colour wash changes background halfway through a word."""
+    washes = [s for s in doc.shapes if s.role == "wash"]
+    for text in doc.texts:
+        poly = shrink(text.corners, tol)
+        if any(segment_hits_poly(a, b, poly) for wash in washes for a, b in wash.segments):
+            issues.append(
+                Issue("warning", "TEXT_ON_WASH_EDGE", f'"{text.content}" straddles the edge of a colour wash')
+            )
+
+
 def grow_down(corners: list[Point]) -> list[Point]:
     """Text box extended a little past its baseline, where an underline lives."""
     cx, cy = sum(p[0] for p in corners) / 4, sum(p[1] for p in corners) / 4
@@ -1043,7 +1056,7 @@ def check_legibility(
     light = sorted({t.fill for t in doc.texts if (luminance(t.fill) or 0) > 0.55 and not t.halo})
     for color in light:
         issues.append(Issue("warning", "LOW_CONTRAST", f"text in {color} prints faint in black and white"))
-    colors = {s.stroke for s in doc.shapes if s.stroke} | {t.fill for t in doc.texts if t.fill}
+    colors = {s.stroke for s in doc.shapes if s.stroke and s.role != "wash"} | {t.fill for t in doc.texts if t.fill}
     colored = [c for c in colors if is_chromatic(c)]
     for i, a in enumerate(colored):
         for b in colored[i + 1 :]:
@@ -1096,13 +1109,18 @@ def validate(
     measured_by_browser = browser_measure(doc) if browser else False
     if not measured_by_browser:
         issues.append(
-            Issue("warning", "TEXT_ESTIMATED", "no browser used: text widths come from font metrics, not real layout")
+            Issue(
+                "warning",
+                "TEXT_ESTIMATED",
+                "text not measured in a browser: widths come from font metrics, not real layout",
+            )
         )
     check_text_overlap(doc, tolerance, issues)
     check_text_crossed(doc, tolerance, issues)
     check_bounds(doc, margin, tolerance, issues)
     check_dimensions(doc, issues)
     check_leaders(doc, issues)
+    check_washes(doc, tolerance, issues)
     check_scale(doc, issues)
     check_legibility(doc, issues)
     check_fonts(doc, issues)

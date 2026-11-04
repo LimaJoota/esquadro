@@ -21,10 +21,15 @@ SCRIPTS = (
 )
 SVGS = (
     "explain_system",
+    "explain_system_en",
     "explain_steps",
+    "explain_steps_en",
     "explain_compare",
+    "explain_compare_en",
     "explain_flow",
+    "explain_flow_en",
     "explain_cut",
+    "explain_cut_en",
     "cargo_section_technical",
     "cargo_section_sketch",
     "corrugated_pipe_technical",

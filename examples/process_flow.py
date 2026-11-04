@@ -76,6 +76,7 @@ def technical() -> Path:
     d = Drawing.sheet(
         "A3",
         mode="industrial",
+        lang="pt",
         title="Fluxo de processo: aquecimento",
         description="Generic process flow: feed vessel, pump, heater, control valve and product vessel.",
         title_block={"number": "EX-003", "drawn": "Esquadro", "date": "2026-11-04", "rev": "0", "projection": None},
@@ -110,6 +111,7 @@ def sketch() -> Path:
         230,
         130,
         "sketch",
+        lang="pt",
         title="Fluxo de processo (croqui)",
         description="Hand-style sketch of a generic heating process.",
     )

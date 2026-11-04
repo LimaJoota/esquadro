@@ -206,6 +206,15 @@ def test_browser_measurement_is_used_and_catches_overlap() -> None:
 
 @pytest.mark.browser
 @pytest.mark.skipif(find_browser() is None, reason="no browser here")
+def test_empty_text_elements_do_not_derail_browser_measurement() -> None:
+    body = '<text x="10" y="10" font-size="4">Label</text><text x="10" y="20" font-size="4"></text><text x="10" y="30" font-size="4">  </text>'
+    _, summary = validate(f"{HEAD}{body}{SCALE}</svg>", browser=True)
+    assert summary["measured"] == "browser"
+    assert summary["texts"] == 2
+
+
+@pytest.mark.browser
+@pytest.mark.skipif(find_browser() is None, reason="no browser here")
 def test_browser_measurement_is_refused_for_unsafe_svg() -> None:
     body = '<text x="10" y="10" font-size="4">Label</text><script>document.title="x"</script>'
     _, summary = validate(f"{HEAD}{body}{SCALE}</svg>", browser=True)

@@ -154,6 +154,7 @@ def data_rows(info: dict, lang: str = "pt") -> list[list[str]]:
 def technical() -> Path:
     d = Drawing.sheet(
         "A3",
+        lang="pt",
         title="Corte de carga em carreta",
         description="Cross-section of a flatbed semi-trailer carrying six pipes in a hexagonal stack.",
         title_block={"number": "EX-001", "drawn": "Esquadro", "date": "2026-11-04", "rev": "0"},
@@ -187,6 +188,7 @@ def sketch() -> Path:
         190,
         128,
         "sketch",
+        lang="pt",
         title="Corte de carga em carreta (croqui)",
         description="Hand-style sketch of a semi-trailer section carrying six pipes.",
     )
@@ -201,8 +203,8 @@ def sketch() -> Path:
     count = len(info["centres"])
     lines = [
         f"{count} tubos em 3 fiadas",
-        f"topo a {format_value(info['top'])} mm",
-        f"folga de {format_value(GAUGE_HEIGHT - info['top'])} mm",
+        f"topo a {format_value(info['top'], 'pt')} mm",
+        f"folga de {format_value(GAUGE_HEIGHT - info['top'], 'pt')} mm",
         f"carga de {format_value(count * PIPE_MASS_T, 'pt', 1)} t",
     ]
     for i, row in enumerate(lines):

@@ -1,0 +1,21 @@
+{
+  "name": "esquadro",
+  "owner": { "name": "LimaJoota", "url": "https://github.com/LimaJoota" },
+  "metadata": {
+    "description": "Hand-style sketches that explain things, and technical figures for documents, as checked, print-ready SVG.",
+    "version": "0.3.0"
+  },
+  "plugins": [
+    {
+      "name": "esquadro",
+      "description": "Hand-style sketches that explain things, and technical figures for documents, as checked, print-ready SVG.",
+      "source": "./",
+      "strict": false,
+      "version": "0.3.0",
+      "license": "MIT",
+      "homepage": "https://github.com/LimaJoota/esquadro",
+      "keywords": ["sketch", "drawing", "svg", "technical-drawing", "diagram"],
+      "skills": ["./"]
+    }
+  ]
+}

@@ -3,7 +3,7 @@ name: esquadro
 description: Draw hand-style sketches that explain things, and technical figures for documents, as checked, print-ready SVG. Use whenever a drawing would help someone understand, even if nobody asks for one by that name, or when the user says "desenha", "faz um desenho", "faz um croqui", "esboço", "esquema", "ilustra", "explica com desenho", "mostra como funciona", "passo a passo com figura", "figura para o relatório", "draw this", "sketch" or "illustrate". Covers how something is arranged, how to do it, right versus wrong, who does what, and also dimensioned sections, sheets with a title block, load arrangements and simplified process flows. Also use it to check an existing SVG for overlapping text, lines through labels or elements off the page. Not for software architecture or sequence diagrams, data charts, photos or artistic illustration.
 license: MIT
 metadata:
-  version: "0.2.0"
+  version: "0.3.0"
 ---
 
 # Esquadro
@@ -19,7 +19,7 @@ Sketch is the default. Reach for `technical` mode only when the drawing will be 
 1. **Write the sentence**: the one thing the reader should get from the figure. Then read `references/explaining.md` and pick the form that says it: arrangement, steps, right versus wrong, flow, or cut.
 2. **Draw** with the library, in a script saved beside the output, so the drawing can be changed and regenerated. Hand-placed SVG is where labels land on top of each other.
 3. **Validate**: `python3 <skill>/scripts/validate.py out.svg`. Fix every error at its cause in the script, and read the warnings.
-4. **Render and look**: `python3 <skill>/scripts/render.py out.svg out.png`, then open the PNG with the Read tool. Ask whether it says the sentence to someone who has not read the text. The validator cannot judge that, nor a leader running through an object.
+4. **Render and look**: `python3 <skill>/scripts/render.py out.svg out.png`, then open the PNG with the Read tool. Ask whether it says the sentence to someone who has not read the text. The validator cannot judge that, nor a leader running through an object. Cover the numbers with your hand: can each part still be recognised by its shape? If a float is just a circle on a stick, draw it better before delivering.
 5. **Check black and white** when it will be printed: `render.py out.svg gray.png --gray`.
 6. **Deliver** the SVG, the PNG and the script. Say what was assumed, and what was not verified.
 
@@ -40,7 +40,7 @@ import sys
 sys.path.insert(0, "<skill>/scripts")
 from esquadro import Drawing, Iso, callout, hand_note, legend
 
-d = Drawing.figure("page", 80, title="Tanque e bomba", description="Tanque ligado a uma bomba, com chamadas.")
+d = Drawing.figure("page", 80, lang="pt", title="Tanque e bomba", description="Tanque ligado a uma bomba, com chamadas.")
 d.text((5, 9), "Tanque e bomba", "heading")
 iso = Iso(d, (15, 62), unit=0.55)
 tank = iso.cylinder((20, 30, 0), (20, 30, 50), 14)      # far objects first
@@ -53,7 +53,13 @@ hand_note(d, pump["right"], (92, 58), "fica perto do tanque para puxar com folga
 d.save("explica.svg")
 ```
 
-`Drawing.figure("page", h)` is 170 mm wide and `"half"` is 80 mm, to fit a document at true size. `finish="napkin"`, `"study"` or `"clean"` sets how loose the hand is. It prints "SEM ESCALA" by itself.
+Write every word in the drawing in the language of the request, and pass `lang="pt"` or `"en"`: it sets the printed notices and the decimal separator. `Drawing.figure("page", h)` is 170 mm wide and `"half"` is 80 mm, to fit a document at true size. `finish="napkin"`, `"study"` or `"clean"` sets how loose the hand is. It prints "NOT TO SCALE" by itself.
+
+**Colour is optional, and pencil is the base.** Add it when it carries meaning:
+
+- Pen: `ink="red"` for the problem or the point of attention, `ink="blue"` for the correct way or a calm note. Every explaining tool takes `ink=`, and `with d.pen("red"):` covers anything else.
+- Watercolour: `iso.cylinder(..., color="blue")`, `iso.box(..., color="yellow")`, or `d.wash(points, "blue")` after an outline and before its hatching. Colours: `blue`, `red`, `yellow`, `green`, `brown`, `gray`.
+- Colour must never be the only signal. A printer in black and white turns red and blue into grays, so a right or wrong keeps its shape (`mark`), and text says what the colour means. Check with `--gray`. For a print-only document, stay in pencil.
 
 ## Example: a technical sheet
 
@@ -64,7 +70,7 @@ from esquadro import Drawing, Scale
 
 LENGTH, HEIGHT = 2400.0, 600.0                      # real millimetres, named once
 
-d = Drawing.sheet("A3", title="Viga de apoio", title_block={"number": "D-01", "drawn": "Projetista", "date": "2026-11-04"})
+d = Drawing.sheet("A3", title="Viga de apoio", lang="pt", title_block={"number": "D-01", "drawn": "Projetista", "date": "2026-11-04"})
 v = d.fit_view((0, 0, LENGTH, HEIGHT), pad=(30, 20, 30, 30))   # picks the largest standard scale that fits
 v.rect(0, 0, LENGTH, HEIGHT)
 v.hatch([(0, 0), (300, 0), (300, HEIGHT), (0, HEIGHT)])
@@ -117,8 +123,8 @@ Use `d.view(origin, Scale(1, 50))` to place a view yourself, and `Scale.schemati
 | `NO_SCALE` | No scale and no "not to scale" notice | Print one |
 | `EXTERNAL_REF` | Script or external file | Remove it: the SVG must stand alone |
 
-Warnings: `LEADER_CROSS`, `SMALL_TEXT`, `THIN_STROKE`, `LOW_CONTRAST`, `COLOR_ONLY`, `FONT_NOT_EMBEDDED`, `TEXT_ESTIMATED`, `NONSTANDARD_SCALE`. Options: `--strict`, `--json`, `--static`, `--margin N`, `--annotate out.svg`, which rings each error in red so you can look at it.
+Warnings: `LEADER_CROSS`, `TEXT_ON_WASH_EDGE`, `SMALL_TEXT`, `THIN_STROKE`, `LOW_CONTRAST`, `COLOR_ONLY`, `FONT_NOT_EMBEDDED`, `TEXT_ESTIMATED`, `NONSTANDARD_SCALE`. Options: `--strict`, `--json`, `--static`, `--margin N`, `--annotate out.svg`, which rings each error in red so you can look at it.
 
 ## Embedding
 
-The SVG carries its own font and needs nothing else. For a document, `Figures` numbers the figures and gives cross-references: see `references/explaining.md`. In HTML, `<img src="x.svg">` or inline both work. For PDF, `render.py out.svg out.pdf` writes the true paper size. Technical drawings stay fully vector. Sketch mode's filter is rasterized by Chrome's PDF engine, at about 270 dpi in testing, with text still vector. Use `Drawing(..., wobble="geometry")` when the strokes must stay vector, or for programs that ignore SVG filters.
+The SVG carries its own font and needs nothing else. For a document, `Figures` numbers the figures and gives cross-references: see `references/explaining.md`. In HTML, `<img src="x.svg">` or inline both work. For PDF, `render.py out.svg out.pdf` writes the true paper size. Technical drawings stay fully vector. Sketch mode's filter is rasterized by Chrome's PDF engine, at about 270 dpi in testing, with text still vector. Use `Drawing(..., wobble="geometry")` when the strokes must stay vector, or for programs that ignore SVG filters; washes then become flat translucent fills. `wash="flat"` does that for washes alone.

@@ -93,14 +93,21 @@ class Iso:
         *,
         shade: str | None = "right",
         spacing: float = 1.8,
+        color: str | None = None,
     ) -> dict:
-        """Box from corner (x, y, z), sizes along x, y and z. `shade`: 'right', 'left', 'both' or None."""
+        """Box from corner (x, y, z), sizes along x, y and z. `shade`: 'right', 'left', 'both' or None.
+
+        `color` adds a watercolour wash, lightest on top and deepest on the right.
+        """
         x2, y2, z2 = x + w, y + depth, z + h
         top = [(x, y, z2), (x2, y, z2), (x2, y2, z2), (x, y2, z2)]
         left = [(x, y, z), (x2, y, z), (x2, y, z2), (x, y, z2)]
         right = [(x2, y, z), (x2, y2, z), (x2, y2, z2), (x2, y, z2)]
         for face in (top, left, right):
             self.poly(face, fill="#fff")
+        if color:
+            for face, strength in ((top, 0.7), (left, 1.05), (right, 1.4)):
+                self.d.wash([self.p(*q) for q in face], color, strength=strength)
         if shade in ("right", "both"):
             self._shade(right, spacing)
         if shade in ("left", "both"):
@@ -112,8 +119,11 @@ class Iso:
             "base": self.p(x2, y, z),
         }
 
-    def cylinder(self, a: Point3, b: Point3, r: float, *, shade: bool = True) -> dict:
-        """Cylinder between two axis points, any direction. The end nearer the viewer shows as a full circle."""
+    def cylinder(self, a: Point3, b: Point3, r: float, *, shade: bool = True, color: str | None = None) -> dict:
+        """Cylinder between two axis points, any direction. The end nearer the viewer shows as a full circle.
+
+        `color` adds a watercolour wash over the body.
+        """
         ax = (b[0] - a[0], b[1] - a[1], b[2] - a[2])
         norm = math.sqrt(sum(c * c for c in ax))
         ax = (ax[0] / norm, ax[1] / norm, ax[2] / norm)
@@ -146,6 +156,8 @@ class Iso:
         near = ring_b if near_is_b else ring_a
         hull = _hull(ring_a + ring_b)
         self.d.polyline(hull, "visible", closed=True, fill="#fff")
+        if color:
+            self.d.wash(hull, color)
         self.d.polyline(near, "visible", closed=True)
         pa, pb = self.p(*a), self.p(*b)
         if shade:

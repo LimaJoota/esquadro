@@ -12,7 +12,7 @@ from render import find_browser
 from validate import validate
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
-GOOD = sorted(p for p in EXAMPLES.glob("*.svg"))
+GOOD = sorted([*EXAMPLES.glob("*.svg"), *EXAMPLES.glob("from_prompt/*.svg")])
 
 
 def test_examples_exist_with_their_pictures() -> None:

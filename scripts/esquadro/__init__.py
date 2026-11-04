@@ -1,15 +1,17 @@
 """Esquadro: explanatory sketches and technical drawings as checked, self-contained SVG."""
 
 from . import symbols
-from .core import PAPER, VERSION, Drawing, Scale, format_value, hatch_segments, text_width
+from .core import PAPER, PENS, VERSION, WASHES, Drawing, Scale, format_value, hatch_segments, text_width
 from .document import Figures
-from .explain import Panel, callout, flow_arrow, hand_note, legend, mark, marker, panels, ring, span
+from .explain import Panel, callout, circle_points, flow_arrow, hand_note, legend, mark, marker, panels, ring, span
 from .objects import Iso, building, document, person, truck
 from .view import DimensionMismatch, View
 
 __all__ = [
     "PAPER",
+    "PENS",
     "VERSION",
+    "WASHES",
     "DimensionMismatch",
     "Drawing",
     "Figures",
@@ -19,6 +21,7 @@ __all__ = [
     "View",
     "building",
     "callout",
+    "circle_points",
     "document",
     "flow_arrow",
     "format_value",

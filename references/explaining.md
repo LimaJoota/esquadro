@@ -24,7 +24,8 @@ Write down the one thing the reader should understand after looking: "the socket
 - **Notes say why, not what.** "Nothing holds the end pipe" beats "pipe".
 - **Up to about 7 callouts.** If there are more, split the figure.
 - **Proportion is honest even without scale.** A pump as tall as the tank tells the reader something false. Rough sizes go in `span` with "≈".
-- **Use the reader's words.** Same language and vocabulary as the document it goes in. Portuguese drawings get `lang="pt"`, the default.
+- **Omit parts, not character.** What stays in the drawing should look like what it is. A handle has a grip, a float sits on an arm, a chain has links. A sketch that reduces everything to lines and numbers explains less than a tidy diagram would.
+- **Use the reader's words.** Same language and vocabulary as the request or the document it goes in, with `lang="pt"` or `lang="en"` to match.
 - **Say what is assumed.** An example of how a thing works can carry a claim. If you are not sure the claim is true, say so to the user or take it out of the drawing.
 
 ## Tools
@@ -59,6 +60,20 @@ document(d, at, w, h)                returns left, right, top, bottom
 ```
 
 `esquadro.symbols` (`vessel`, `pump`, `valve`, `exchanger`) also works in sketch mode.
+
+Colour, all optional:
+
+```text
+ink="red" or "blue"                  on callout, marker, hand_note, span, ring, mark, flow_arrow
+with d.pen("red"): ...               pen for anything drawn in the block; any hex works
+panels(..., colored=True)            wrong marks in red, right marks in blue
+d.wash(points, "blue", strength=1)   watercolour, painted in drawing order; pencil shows through
+circle_points(center, rx, ry=None)   outline of a circle, for a wash
+iso.box(..., color="yellow")         wash on the faces, deepest on the right
+iso.cylinder(..., color="blue")      wash on the body
+```
+
+Use one or two washes to separate what the reader must tell apart, such as water from pipe. Red and blue pens mean something only if used consistently: red for the problem, blue for the right way. A wash behind text is fine when the text sits wholly inside it; straddling its edge gets a `TEXT_ON_WASH_EDGE` warning.
 
 ## Method
 

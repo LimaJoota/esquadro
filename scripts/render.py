@@ -4,7 +4,8 @@
     python scripts/render.py drawing.svg drawing.png [--dpi 150] [--gray]
     python scripts/render.py drawing.svg drawing.pdf
 
-Looks for Chrome, Chromium, Edge or a Playwright Chromium; set ESQUADRO_CHROME to override. The browser
+Looks for Chrome, Chromium, Edge or a Playwright Chromium; set ESQUADRO_CHROME to override, and
+ESQUADRO_CHROME_ARGS for extra flags, such as --no-sandbox in a container. The browser
 runs with a throwaway profile and DNS disabled. SVGs that contain scripts or external references are refused.
 """
 
@@ -14,6 +15,7 @@ import argparse
 import glob
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -81,6 +83,7 @@ def run_browser(browser: str, args: list[str], *, timeout: int = 60) -> subproce
             NO_NETWORK,
             f"--user-data-dir={profile}",
         ]
+        command += shlex.split(os.environ.get("ESQUADRO_CHROME_ARGS", ""))
         return subprocess.run([*command, *args], capture_output=True, text=True, timeout=timeout, check=False)
 
 

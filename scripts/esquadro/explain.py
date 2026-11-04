@@ -20,18 +20,29 @@ def _unit(a: Point, b: Point) -> Point:
     return ((b[0] - a[0]) / length, (b[1] - a[1]) / length)
 
 
-def marker(d: Drawing, at: Point, n: int | str, *, r: float = 3.2) -> None:
+def circle_points(center: Point, rx: float, ry: float | None = None) -> list[Point]:
+    """Outline of a circle or ellipse, for `d.wash`."""
+    ry = rx if ry is None else ry
+    return [
+        (center[0] + rx * math.cos(2 * math.pi * i / 40), center[1] + ry * math.sin(2 * math.pi * i / 40))
+        for i in range(40)
+    ]
+
+
+def marker(d: Drawing, at: Point, n: int | str, *, r: float = 3.2, ink: str | None = None) -> None:
     """Number in a circle, with white behind it, so it reads on top of the drawing."""
-    d.circle(at, r, "thin", fill="#fff")
-    d.fit_text(at, str(n), 2 * r - 1.2, r * 1.15, min_size=2.0, anchor="middle", valign="middle")
+    with d.pen(ink):
+        d.circle(at, r, "thin", fill="#fff")
+        d.fit_text(at, str(n), 2 * r - 1.2, r * 1.15, min_size=2.0, anchor="middle", valign="middle")
 
 
-def callout(d: Drawing, target: Point, n: int | str, at: Point, *, r: float = 3.2) -> None:
+def callout(d: Drawing, target: Point, n: int | str, at: Point, *, r: float = 3.2, ink: str | None = None) -> None:
     """Numbered marker at `at` with a line to a dot on `target`. Explain the numbers with `legend`."""
-    ux, uy = _unit(at, target)
-    d.line((at[0] + ux * r, at[1] + uy * r), target, "thin", attrs=LEADER)
-    d.circle(target, 0.7, "thin", fill=d.style.ink)
-    marker(d, at, n, r=r)
+    with d.pen(ink):
+        ux, uy = _unit(at, target)
+        d.line((at[0] + ux * r, at[1] + uy * r), target, "thin", attrs=LEADER)
+        d.circle(target, 0.7, "thin", fill=d.ink)
+        marker(d, at, n, r=r)
 
 
 def legend(
@@ -57,8 +68,14 @@ def hand_note(
     *,
     bend: float = 0.22,
     size: float | str = "label",
+    ink: str | None = None,
 ) -> Rect:
     """Wrapped note whose top-left is `at`, with a curved arrow from its nearest side to `target`."""
+    with d.pen(ink):
+        return _hand_note(d, target, at, text, width, bend, size)
+
+
+def _hand_note(d: Drawing, target: Point, at: Point, text: str, width: float, bend: float, size: float | str) -> Rect:
     size_mm = d.size(size)
     top = at[1]
     bottom = d.paragraph((at[0], at[1] + size_mm * 0.72), text, width, size_mm) - size_mm * 0.9
@@ -92,8 +109,22 @@ def _wrapped(text: str, width: float, size: float, font: str) -> list[str]:
     return rows + ([current] if current else [])
 
 
-def span(d: Drawing, a: Point, b: Point, text: str, *, side: str = "above", size: float | str = "dim") -> None:
+def span(
+    d: Drawing,
+    a: Point,
+    b: Point,
+    text: str,
+    *,
+    side: str = "above",
+    size: float | str = "dim",
+    ink: str | None = None,
+) -> None:
     """Double arrow with free text, such as "≈ 2 m". It measures nothing: use it for rough sizes."""
+    with d.pen(ink):
+        _span(d, a, b, text, side, size)
+
+
+def _span(d: Drawing, a: Point, b: Point, text: str, side: str, size: float | str) -> None:
     ux, uy = _unit(a, b)
     d.line(a, b, "thin")
     d.arrow_head(a, (-ux, -uy))
@@ -112,7 +143,7 @@ def span(d: Drawing, a: Point, b: Point, text: str, *, side: str = "above", size
     d.text(mid, text, size_mm, anchor="middle", rotate=angle)
 
 
-def ring(d: Drawing, center: Point, rx: float, ry: float, *, turns: float = 1.12) -> None:
+def ring(d: Drawing, center: Point, rx: float, ry: float, *, turns: float = 1.12, ink: str | None = None) -> None:
     """Loose hand-drawn loop around something, the way a pen circles what matters."""
     start = d.rng.uniform(0, 2 * math.pi)
     n = 56
@@ -122,22 +153,31 @@ def ring(d: Drawing, center: Point, rx: float, ry: float, *, turns: float = 1.12
         a = start + 2 * math.pi * turns * t
         grow = 1 + 0.06 * (t - 0.5)
         pts.append((center[0] + rx * grow * math.cos(a), center[1] + ry * grow * math.sin(a)))
-    d.polyline(pts, "visible")
+    with d.pen(ink):
+        d.polyline(pts, "visible")
 
 
-def mark(d: Drawing, at: Point, ok: bool, *, size: float = 6.0) -> None:
+def mark(d: Drawing, at: Point, ok: bool, *, size: float = 6.0, ink: str | None = None) -> None:
     """Right or wrong, as heavy strokes so it survives a black-and-white printer."""
     x, y = at
     s = size / 2
-    if ok:
-        d.polyline([(x - s, y), (x - s * 0.25, y + s * 0.8), (x + s, y - s)], "border")
-    else:
-        d.line((x - s, y - s), (x + s, y + s), "border")
-        d.line((x + s, y - s), (x - s, y + s), "border")
+    with d.pen(ink):
+        if ok:
+            d.polyline([(x - s, y), (x - s * 0.25, y + s * 0.8), (x + s, y - s)], "border")
+        else:
+            d.line((x - s, y - s), (x + s, y + s), "border")
+            d.line((x + s, y - s), (x - s, y + s), "border")
 
 
-def flow_arrow(d: Drawing, a: Point, b: Point, *, bend: float = 0.0, label: str | None = None) -> None:
+def flow_arrow(
+    d: Drawing, a: Point, b: Point, *, bend: float = 0.0, label: str | None = None, ink: str | None = None
+) -> None:
     """Bold arrow between steps of an explanation, straight or curved."""
+    with d.pen(ink):
+        _flow_arrow(d, a, b, bend, label)
+
+
+def _flow_arrow(d: Drawing, a: Point, b: Point, bend: float, label: str | None) -> None:
     dx, dy = b[0] - a[0], b[1] - a[1]
     head = 4.5
     length = math.hypot(dx, dy) or 1.0
@@ -176,8 +216,12 @@ def panels(
     arrows: bool = True,
     gap: float = 14.0,
     size: float | str = "label",
+    colored: bool = False,
 ) -> list[Panel]:
-    """Split an area into a row of `n` frames with titles, arrows between them, and optional right/wrong marks."""
+    """Split an area into a row of `n` frames with titles, arrows between them, and optional right/wrong marks.
+
+    `colored=True` draws wrong marks in red pen and right marks in blue; their shapes still carry the meaning.
+    """
     x0, y0, w, h = area or d.area
     width = (w - gap * (n - 1)) / n
     size_mm = d.size(size)
@@ -192,7 +236,8 @@ def panels(
         if titles:
             d.paragraph((x, y0 + size_mm * 0.75), titles[i], room, size_mm)
         if verdicts and verdicts[i] is not None:
-            mark(d, (x + width - 3.5, y0 + 3.0), verdicts[i], size=5.5)
+            ink = ("blue" if verdicts[i] else "red") if colored else None
+            mark(d, (x + width - 3.5, y0 + 3.0), verdicts[i], size=5.5, ink=ink)
         if arrows and i < n - 1:
             mid = y0 + title_h + (h - title_h) / 2
             flow_arrow(d, (x + width + 2.0, mid), (x + width + gap - 2.0, mid))
