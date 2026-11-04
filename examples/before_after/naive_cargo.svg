@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420">
+  <style>
+    .label { font: 15px Arial; fill: #333; }
+    .dim { font: 13px Arial; fill: #333; }
+  </style>
+  <rect width="640" height="420" fill="#fff"/>
+  <text x="20" y="28" class="label" style="font-size:20px">Load section on semi-trailer</text>
+  <!-- road, wheels, deck -->
+  <line x1="60" y1="360" x2="500" y2="360" stroke="#000" stroke-width="2"/>
+  <rect x="120" y="290" width="70" height="70" fill="none" stroke="#000" stroke-width="2"/>
+  <rect x="370" y="290" width="70" height="70" fill="none" stroke="#000" stroke-width="2"/>
+  <rect x="100" y="272" width="360" height="12" fill="#999" stroke="#000"/>
+  <!-- pipes -->
+  <circle cx="170" cy="222" r="50" fill="none" stroke="#000" stroke-width="2"/>
+  <circle cx="280" cy="222" r="50" fill="none" stroke="#000" stroke-width="2"/>
+  <circle cx="390" cy="222" r="50" fill="none" stroke="#000" stroke-width="2"/>
+  <circle cx="225" cy="130" r="50" fill="none" stroke="#000" stroke-width="2"/>
+  <circle cx="335" cy="130" r="50" fill="none" stroke="#000" stroke-width="2"/>
+  <circle cx="280" cy="38" r="50" fill="none" stroke="#000" stroke-width="2"/>
+  <!-- labels -->
+  <text x="280" y="226" class="label" text-anchor="middle">Pipe OD 800 mm</text>
+  <text x="225" y="134" class="label" text-anchor="middle">Pipe OD 800 mm</text>
+  <text x="335" y="134" class="label" text-anchor="middle">Pipe OD 800 mm</text>
+  <!-- dimensions -->
+  <line x1="100" y1="390" x2="460" y2="390" stroke="#000"/>
+  <text x="280" y="394" class="dim" text-anchor="middle">Deck width 2600 mm</text>
+  <line x1="520" y1="284" x2="520" y2="-12" stroke="#000"/>
+  <text x="528" y="150" class="dim">Stack height 2200 mm</text>
+  <text x="528" y="156" class="dim">Limit 4400 mm from road, deck at 1350 mm</text>
+</svg>

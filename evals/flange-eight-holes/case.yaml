@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: flange-eight-holes
+expected_outcome: |
+  A valid A3 sheet with two aligned views, one a hatched section, with computed dimensions and a title block.

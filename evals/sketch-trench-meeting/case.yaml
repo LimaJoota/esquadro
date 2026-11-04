@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: sketch-trench-meeting
+expected_outcome: |
+  A pencil-style sketch of a trench section with its dimensions, carrying a notice if it is not to scale.
