@@ -1,6 +1,6 @@
 # Backlog
 
-Tudo o que falta para o Esquadro ser a melhor skill de desenho corporativo, industrial e de engenharia. *Project backlog, kept in Portuguese; translating it is item QUA-08.*
+Tudo o que falta para o Esquadro ser a melhor skill de desenho para explicar as coisas e apoiar documentos técnicos, nas áreas corporativa, industrial e de engenharia. **O centro é o sketch explicativo** (decisão do dono do projeto em 04/11/2026); o desenho técnico vem como apoio. *Project backlog, kept in Portuguese; translating it is item QUA-08.*
 
 **Prioridade:** P0 próxima versão, P1 logo depois, P2 quando as anteriores estiverem firmes, P3 desejável.
 
@@ -12,9 +12,10 @@ Cada item traz o que é, por que importa e como saber que está pronto.
 
 | Versão | Itens |
 |---|---|
-| v0.2: desenho técnico de verdade | TEC-01, TEC-03, TEC-06, TEC-08, TEC-11, TEC-12, QUA-01, QUA-02, QUA-04, QUA-06, INT-01, DIS-02, DIS-03 |
-| v0.3: industrial e corporativo | IND-01, IND-03, COR-04, SKE-01, SKE-02, TEC-02, TEC-13, TEC-14, IND-06, IND-07, COR-01 |
-| v0.4: interoperabilidade | INT-03, INT-07, INT-11, IND-04, IND-09, QUA-05, QUA-10, QUA-11, DIS-01 |
+| v0.2 (feita) | Chamadas, notas à mão, quadros, cotas livres, ênfase, certo e errado, níveis de acabamento, perspectiva isométrica básica, objetos, figuras numeradas |
+| v0.3: sketch melhor | EXP-01, EXP-02, EXP-03, EXP-04, EXP-05, SKE-04, SKE-06, QUA-04, QUA-06, DIS-02, DIS-03 |
+| v0.4: documentos | EXP-06, EXP-07, EXP-08, COR-01, COR-04, COR-05, SKE-03, SKE-05, SKE-07, QUA-02, QUA-11 |
+| v0.5: técnico de verdade | TEC-01, TEC-03, TEC-06, TEC-08, TEC-11, TEC-12, QUA-01, INT-01, IND-01, IND-03 |
 | Depois | Todo o restante |
 
 ## Situação das normas brasileiras
@@ -30,6 +31,50 @@ Parte das normas citadas com frequência foi substituída entre 2020 e 2022. O m
 | NBR 10126 | NBR 17068:2022 | Cotas e tolerâncias |
 | NBR 12298 | NBR 17067:2022 | Hachuras |
 | NBR 8196 | `DÚVIDA` sem indício de substituição | Escalas |
+
+---
+
+## Sketch explicativo
+
+### EXP-01 · Biblioteca maior de objetos · P0
+- **O que é:** válvula, bomba, tanque, tubo, viga, parafuso, ferramenta, computador, máquina, caixa, pallet, empilhadeira, em perspectiva e de lado. Todos desenhados por nós.
+- **Por que importa:** explicar depende de ter o objeto à mão. Hoje são 4 objetos e 2 sólidos, e qualquer outro é feito do zero.
+- **Pronto quando:** há 40 ou mais objetos, cada um com pontos de ancoragem e teste, e uma folha mostra todos.
+
+### EXP-02 · Colocação automática de chamadas e notas · P0
+- **O que é:** dado o alvo, escolher onde vai o marcador ou a nota, em espaço livre e sem cruzar outros líderes.
+- **Por que importa:** é o ajuste mais repetido nos exemplos: cada posição foi acertada à mão, olhando a imagem.
+- **Pronto quando:** `callout(d, alvo, n)` funciona sem `at`, e um lote de figuras sai sem cruzamento.
+
+### EXP-03 · Mais sólidos e ocultação · P1
+- **O que é:** cone, esfera, prisma, tubo curvo e chapa, com ordem de pintura automática.
+- **Por que importa:** hoje a ordem é manual, e errar faz um objeto de trás aparecer na frente. Isso também é a base do isométrico de tubulação (IND-04).
+- **Pronto quando:** uma cena com 20 sólidos sai certa em qualquer ordem de chamada, por teste de profundidade.
+
+### EXP-04 · Linguagem visual para movimento e força · P1
+- **O que é:** setas de força, rotação, fluxo de líquido, calor, vibração e linhas de movimento.
+- **Por que importa:** o que mais se explica é o que se move, e o desenho é parado.
+- **Pronto quando:** cada um tem função e exemplo, legível em P&B, e o guia diz quando usar.
+
+### EXP-05 · Validador que olha a explicação · P1
+- **O que é:** novas regras para líder atravessando objeto, marcador sobre o alvo, notas longas demais, mais de 7 chamadas e chamada sem item na legenda.
+- **Por que importa:** esses erros passam hoje. Um líder atravessou a cabeça da pessoa num exemplo e só foi visto na imagem.
+- **Pronto quando:** cada regra tem caso que passa e caso que falha, e os exemplos continuam limpos.
+
+### EXP-06 · Modelos de figura para documento · P0
+- **O que é:** formatos prontos para manual, procedimento, relatório técnico e proposta, com tamanho, numeração e estilo de legenda consistentes.
+- **Por que importa:** o sketch normalmente vive num documento, e o conjunto precisa parecer feito de uma vez.
+- **Pronto quando:** um documento de 10 figuras sai com tudo numerado e citado, e um script confere as referências.
+
+### EXP-07 · Conjunto consistente de figuras · P1
+- **O que é:** mesma escala visual, mesmos objetos e numeração contínua em várias figuras de um mesmo assunto, como os quadros de um manual.
+- **Por que importa:** figuras feitas uma a uma variam de tamanho de letra e de traço.
+- **Pronto quando:** um objeto repetido sai igual em todas as figuras, por teste.
+
+### EXP-08 · Do documento ao desenho · P1
+- **O que é:** ler um procedimento ou relatório, propor onde uma figura ajuda e qual forma usar, e pedir confirmação antes de desenhar.
+- **Por que importa:** muita gente não sabe qual figura pedir, e o trecho difícil do texto é onde a figura vale mais.
+- **Pronto quando:** em 10 documentos de teste, a maioria das sugestões é aceita por um leitor.
 
 ---
 
@@ -261,24 +306,24 @@ BPMN 2.0, especificação pública da OMG.
 
 ## Sketch
 
-### SKE-01 · Níveis de acabamento · P0
-- **O que é:** guardanapo, estudo e apresentação, com variação de tremor, ultrapassagem, hachura e peso.
-- **Por que importa:** o mesmo desenho serve a públicos diferentes, e hoje há um nível só.
-- **Pronto quando:** `finish="napkin"` e os demais produzem diferenças visíveis, com folha comparativa.
+### SKE-01 · Níveis de acabamento · feito na v0.2, básico
+- **O que é:** `finish="napkin"`, `"study"` e `"clean"` já mudam tremor e ultrapassagem. Falta variar peso e hachura.
+- **Por que importa:** o mesmo desenho serve a públicos diferentes.
+- **Pronto quando:** os três níveis também variam peso e densidade, com folha comparativa.
 
-### SKE-02 · Perspectiva isométrica · P0 · `NORMA PAGA`
+### SKE-02 · Perspectiva isométrica · feito na v0.2, básico · `NORMA PAGA`
 ISO 5456-3.
-- **O que é:** projeção isométrica de caixas, cilindros e tubos, com ocultação simples e cotas no plano.
+- **O que é:** `Iso` já faz caixas e cilindros. Falta ocultação (EXP-03), cotas no plano e medidas conferidas.
 - **Por que importa:** é o que mais explica uma peça a quem não lê vistas, e é a base do isométrico de tubulação (IND-04).
-- **Pronto quando:** `d.iso_view()` desenha sólidos paramétricos, e medidas no eixo são convertidas certo, com teste.
+- **Pronto quando:** medidas no eixo são convertidas certo, com teste, e cotas acompanham o plano do objeto.
 
 ### SKE-03 · Perspectiva cônica · P1
 - **O que é:** um e dois pontos de fuga, com linhas de construção opcionais.
 - **Por que importa:** dá leitura realista a reuniões de projeto.
 - **Pronto quando:** paralelas convergem para o ponto calculado por teste, e um galpão sai nos dois modos.
 
-### SKE-04 · Sombreado à mão · P1
-- **O que é:** hachura de sombra, contra-hachura e pontilhado por direção de luz.
+### SKE-04 · Sombreado à mão · P0
+- **O que é:** hoje há hachura fixa numa face e sombra manual no chão. Falta hachura de sombra, contra-hachura e pontilhado por direção de luz.
 - **Por que importa:** é o que faz um croqui parecer desenho de quem sabe.
 - **Pronto quando:** a sombra é função da luz e da geometria, e imprime bem em P&B.
 
@@ -376,8 +421,8 @@ ISO 5456-3.
 - **Pronto quando:** cada regra tem um caso que passa e outro que falha, e cita a norma sem reproduzir o texto.
 
 ### QUA-02 · Ampliar o validador · P0
-- **O que é:** novas regras para líder cruzando cota ou outro líder, folga mínima entre texto e traço, cotas se cruzando, linha de chamada cortando valor, seta sobre seta, tubulação sobre símbolo, e texto sobre hachura sem máscara.
-- **Por que importa:** na v0.1 esses erros passaram pelo validador e só foram vistos na imagem. Um rótulo encostado numa tabela e um líder cruzando cota são casos reais do desenvolvimento.
+- **O que é:** líder cruzando cota ou outro líder já gera aviso desde a v0.2. Faltam folga mínima entre texto e traço, cotas se cruzando, linha de chamada cortando valor, seta sobre seta, tubulação sobre símbolo, e texto sobre hachura sem máscara.
+- **Por que importa:** esses erros passaram pelo validador e só foram vistos na imagem. Um rótulo encostado numa tabela é caso real do desenvolvimento.
 - **Pronto quando:** esses casos são detectados por teste, e os exemplos continuam limpos.
 
 ### QUA-03 · Conferência de somas · P1

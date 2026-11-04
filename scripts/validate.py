@@ -13,7 +13,8 @@ Errors (exit code 1):
   NO_SCALE          no declared scale and no "not to scale" notice
 
 Warnings (exit code 0, or 1 with --strict):
-  SMALL_TEXT, THIN_STROKE, LOW_CONTRAST, COLOR_ONLY, FONT_NOT_EMBEDDED, TEXT_ESTIMATED, NONSTANDARD_SCALE
+  SMALL_TEXT, THIN_STROKE, LOW_CONTRAST, COLOR_ONLY, FONT_NOT_EMBEDDED, TEXT_ESTIMATED, NONSTANDARD_SCALE,
+  LEADER_CROSS
 
 Text is measured in a local browser when one is found, and otherwise with bundled font metrics.
 """
@@ -982,6 +983,23 @@ def check_dimensions(doc: Document, issues: list[Issue]) -> None:
             )
 
 
+def check_leaders(doc: Document, issues: list[Issue]) -> None:
+    """A leader that crosses a dimension line or another leader is hard to follow."""
+    leaders = [s for s in doc.shapes if s.role == "leader"]
+    lines = [s for s in doc.shapes if s.role == "dimline"]
+    for i, leader in enumerate(leaders):
+        for other in lines + leaders[i + 1 :]:
+            hit = next(
+                (a for a, b in leader.segments for c, d in other.segments if segments_intersect(a, b, c, d)), None
+            )
+            if hit:
+                what = "a dimension line" if other.role == "dimline" else "another leader"
+                issues.append(
+                    Issue("warning", "LEADER_CROSS", f"a leader crosses {what} near ({hit[0]:.1f}, {hit[1]:.1f})")
+                )
+                break
+
+
 def grow_down(corners: list[Point]) -> list[Point]:
     """Text box extended a little past its baseline, where an underline lives."""
     cx, cy = sum(p[0] for p in corners) / 4, sum(p[1] for p in corners) / 4
@@ -1084,6 +1102,7 @@ def validate(
     check_text_crossed(doc, tolerance, issues)
     check_bounds(doc, margin, tolerance, issues)
     check_dimensions(doc, issues)
+    check_leaders(doc, issues)
     check_scale(doc, issues)
     check_legibility(doc, issues)
     check_fonts(doc, issues)

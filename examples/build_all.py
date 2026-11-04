@@ -9,8 +9,22 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
-SCRIPTS = ("cargo_section.py", "corrugated_pipe.py", "process_flow.py")
+SCRIPTS = (
+    "explain_system.py",
+    "explain_steps.py",
+    "explain_compare.py",
+    "explain_flow.py",
+    "explain_cut.py",
+    "cargo_section.py",
+    "corrugated_pipe.py",
+    "process_flow.py",
+)
 SVGS = (
+    "explain_system",
+    "explain_steps",
+    "explain_compare",
+    "explain_flow",
+    "explain_cut",
     "cargo_section_technical",
     "cargo_section_sketch",
     "corrugated_pipe_technical",

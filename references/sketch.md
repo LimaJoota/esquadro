@@ -1,8 +1,8 @@
-# Sketch mode
+# Sketch mode: strokes and printing
 
-Read this when the drawing is for a report, a meeting or an early idea.
+How to choose the form, and the tools for explaining, are in `references/explaining.md`. This page is about the strokes themselves.
 
-A sketch says "this is the idea, not the final design". It does not excuse wrong proportions. Sketches use the same geometry and dimension code as technical drawings, so a good pattern is one `draw(view)` function called from both modes. See `examples/cargo_section.py`.
+A sketch says "this is the idea, not the final design". It does not excuse wrong proportions. When the same object needs both a sketch and a technical sheet, one `draw(view)` function can serve both modes: see `examples/cargo_section.py`.
 
 ```python
 d = Drawing(180, 120, "sketch", title="...", seed=7, wobble="filter")

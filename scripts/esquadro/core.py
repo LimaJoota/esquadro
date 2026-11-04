@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 Point = tuple[float, float]
 Rect = tuple[float, float, float, float]  # x, y, width, height
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 FONT_DIR = Path(__file__).resolve().parents[2] / "assets" / "fonts"
 METRICS: dict = json.loads((FONT_DIR / "metrics.json").read_text(encoding="utf-8"))
 
@@ -163,6 +163,14 @@ STYLES = {
 STYLES["industrial"] = STYLES["technical"]
 
 
+# Sketch finish: tremor amount, tremor frequency, corner overshoot multiplier.
+FINISHES = {
+    "napkin": (1.9, 0.07, 1.8),
+    "study": (1.1, 0.09, 1.0),
+    "clean": (0.5, 0.12, 0.4),
+}
+
+
 def text_width(text: str, size: float, font: str = "overpass") -> float:
     metric = METRICS[font]
     widths = metric["widths"]
@@ -234,12 +242,16 @@ class Drawing:
         description: str = "",
         seed: int = 7,
         wobble: str = "filter",
+        finish: str = "study",
         scale_note: bool = True,
     ) -> None:
         if mode not in STYLES:
             raise ValueError(f"unknown mode {mode!r}; use one of {sorted(STYLES)}")
         if wobble not in ("filter", "geometry", "none"):
             raise ValueError("wobble must be 'filter', 'geometry' or 'none'")
+        if finish not in FINISHES:
+            raise ValueError(f"unknown finish {finish!r}; use one of {sorted(FINISHES)}")
+        self.finish = finish
         self.width, self.height = width, height
         self.mode, self.lang = mode, lang
         self.title_text, self.description = title, description
@@ -260,6 +272,14 @@ class Drawing:
         self._title_block: dict | None = None
         self._frame: Rect | None = None
         self._finished = False
+
+    @classmethod
+    def figure(
+        cls, width: str | float = "page", height: float = 95.0, mode: str = "sketch", **kwargs: object
+    ) -> Drawing:
+        """Figure sized for a document: 'page' is 170 mm, the A4 text width; 'half' is 80 mm; or a width in mm."""
+        widths = {"page": 170.0, "half": 80.0}
+        return cls(widths.get(width, width) if isinstance(width, str) else float(width), height, mode, **kwargs)
 
     @classmethod
     def sheet(
@@ -407,7 +427,7 @@ class Drawing:
             prev = a
             for i in range(1, steps + 1):
                 t = i / steps
-                wave = 0.0 if i == steps else self.rng.uniform(-0.45, 0.45)
+                wave = 0.0 if i == steps else self.rng.uniform(-0.45, 0.45) * FINISHES[self.finish][0] / 1.1
                 cur = (a[0] + (b[0] - a[0]) * t + nx * wave, a[1] + (b[1] - a[1]) * t + ny * wave)
                 ctrl = ((prev[0] + cur[0]) / 2 + nx * wave * 0.5, (prev[1] + cur[1]) / 2 + ny * wave * 0.5)
                 out.append(f"Q{fmt(ctrl[0])} {fmt(ctrl[1])} {fmt(cur[0])} {fmt(cur[1])}")
@@ -418,7 +438,8 @@ class Drawing:
         if self.sketch and overshoot and kind == "visible" and math.dist(p1, p2) > 6:
             length = math.dist(p1, p2)
             ux, uy = (p2[0] - p1[0]) / length, (p2[1] - p1[1]) / length
-            a, b = self.rng.uniform(0.3, 1.1), self.rng.uniform(0.3, 1.1)
+            push = FINISHES[self.finish][2]
+            a, b = self.rng.uniform(0.3, 1.1) * push, self.rng.uniform(0.3, 1.1) * push
             p1, p2 = (p1[0] - ux * a, p1[1] - uy * a), (p2[0] + ux * b, p2[1] + uy * b)
         layer = self._layer(kind)
         extra = f" {attrs}" if attrs else ""
@@ -443,7 +464,7 @@ class Drawing:
         layer = self._layer(kind)
         if self.sketch and overshoot and kind == "visible":
             if fill:
-                self.polyline(pts, "thin", closed=True, fill=fill)
+                self.polyline(pts, "hatch", closed=True, fill=fill)
             seq = list(pts) + ([pts[0]] if closed else [])
             for a, b in itertools.pairwise(seq):
                 self.line(a, b, kind)
@@ -479,6 +500,48 @@ class Drawing:
             f'<circle cx="{fmt(center[0])}" cy="{fmt(center[1])}" r="{fmt(radius)}" {fill_attr} '
             f"{self._stroke_attrs(kind)}/>"
         )
+
+    def ellipse(
+        self, center: Point, rx: float, ry: float, kind: str = "visible", *, fill: str | None = None, rotate: float = 0
+    ) -> None:
+        """Ellipse as a closed outline, rotated clockwise on screen by `rotate` degrees."""
+        theta = math.radians(rotate)
+        cos_t, sin_t = math.cos(theta), math.sin(theta)
+        pts = []
+        for i in range(48):
+            a = 2 * math.pi * i / 48
+            x, y = rx * math.cos(a), ry * math.sin(a)
+            pts.append((center[0] + x * cos_t - y * sin_t, center[1] + x * sin_t + y * cos_t))
+        self.polyline(pts, kind, closed=True, fill=fill)
+
+    def curve(
+        self, p0: Point, c1: Point, c2: Point, p3: Point, kind: str = "thin", *, arrow: bool = False, attrs: str = ""
+    ) -> None:
+        """Cubic curve, optionally with an arrowhead on `p3` that follows the curve's end direction."""
+        layer = self._layer(kind)
+        extra = f" {attrs}" if attrs else ""
+        if self.wobble == "geometry":
+            steps = max(6, int(math.dist(p0, p3) / 5))
+            pts = []
+            for i in range(steps + 1):
+                t = i / steps
+                u = 1 - t
+                pts.append(
+                    (
+                        u**3 * p0[0] + 3 * u**2 * t * c1[0] + 3 * u * t**2 * c2[0] + t**3 * p3[0],
+                        u**3 * p0[1] + 3 * u**2 * t * c1[1] + 3 * u * t**2 * c2[1] + t**3 * p3[1],
+                    )
+                )
+            layer.append(f'<path d="{self._hand_path(pts)}" {self._stroke_attrs(kind)}{extra}/>')
+        else:
+            d = (
+                f"M{fmt(p0[0])} {fmt(p0[1])}C{fmt(c1[0])} {fmt(c1[1])} "
+                f"{fmt(c2[0])} {fmt(c2[1])} {fmt(p3[0])} {fmt(p3[1])}"
+            )
+            layer.append(f'<path d="{d}" {self._stroke_attrs(kind)}{extra}/>')
+        if arrow:
+            length = math.dist(c2, p3) or 1.0
+            self.arrow_head(p3, ((p3[0] - c2[0]) / length, (p3[1] - c2[1]) / length), layer_kind=kind)
 
     def arc(self, center: Point, radius: float, start: float, end: float, kind: str = "visible") -> None:
         """Arc in paper space; angles in degrees, measured clockwise on screen from +x."""
@@ -595,7 +658,7 @@ class Drawing:
         shoulder = (at[0] + (4 if to_right else -4), at[1])
         length = math.dist(target, at)
         direction = ((target[0] - at[0]) / length, (target[1] - at[1]) / length)
-        self.line(at, target, "thin")
+        self.line(at, target, "thin", attrs='data-esq-role="leader"')
         self.line(at, shoulder, "thin")
         if arrow:
             self.arrow_head(target, direction)
@@ -815,8 +878,10 @@ class Drawing:
             defs.append(
                 f'<filter id="{filter_id}" filterUnits="userSpaceOnUse" x="0" y="0" '
                 f'width="{fmt(self.width)}" height="{fmt(self.height)}" color-interpolation-filters="sRGB">'
-                f'<feTurbulence type="fractalNoise" baseFrequency="0.09" numOctaves="2" seed="{self.seed}"/>'
-                '<feDisplacementMap in="SourceGraphic" scale="1.1" xChannelSelector="R" yChannelSelector="G"/>'
+                f'<feTurbulence type="fractalNoise" baseFrequency="{FINISHES[self.finish][1]}" '
+                f'numOctaves="2" seed="{self.seed}"/>'
+                f'<feDisplacementMap in="SourceGraphic" scale="{FINISHES[self.finish][0]}" '
+                'xChannelSelector="R" yChannelSelector="G"/>'
                 "</filter>"
             )
             stroke_group = f' filter="url(#{filter_id})"'

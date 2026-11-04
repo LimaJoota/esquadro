@@ -44,13 +44,18 @@ def test_naive_drawing_shows_every_fault_it_was_written_with() -> None:
     assert {"TEXT_OVERLAP", "TEXT_CROSSED", "OUT_OF_BOUNDS", "NO_SCALE"} <= found
 
 
-def test_skill_quick_start_runs_and_validates(tmp_path: Path) -> None:
+def test_skill_quick_starts_run_and_validate(tmp_path: Path) -> None:
     root = EXAMPLES.parent
     skill = (root / "SKILL.md").read_text(encoding="utf-8")
-    code = re.search(r"```python\n(.*?)```", skill, re.DOTALL).group(1).replace("<skill>", str(root))
-    subprocess.run([sys.executable, "-c", code], cwd=tmp_path, check=True)
-    issues, _ = validate((tmp_path / "viga.svg").read_text(encoding="utf-8"), browser=False)
-    assert [i.message for i in issues if i.severity == "error"] == []
+    blocks = re.findall(r"```python\n(.*?)```", skill, re.DOTALL)
+    assert len(blocks) >= 2
+    for code in blocks:
+        subprocess.run([sys.executable, "-c", code.replace("<skill>", str(root))], cwd=tmp_path, check=True)
+    svgs = list(tmp_path.glob("*.svg"))
+    assert len(svgs) == len(blocks)
+    for svg in svgs:
+        issues, _ = validate(svg.read_text(encoding="utf-8"), browser=False)
+        assert [i.message for i in issues if i.severity == "error"] == []
 
 
 def test_skill_frontmatter_is_well_formed() -> None:
@@ -60,3 +65,10 @@ def test_skill_frontmatter_is_well_formed() -> None:
     description = re.search(r"^description: (.+)$", front, re.MULTILINE).group(1)
     assert len(description) <= 1024
     assert "<" not in description
+
+
+def test_versions_agree() -> None:
+    from esquadro import VERSION
+
+    skill = (EXAMPLES.parent / "SKILL.md").read_text(encoding="utf-8")
+    assert f'version: "{VERSION}"' in skill

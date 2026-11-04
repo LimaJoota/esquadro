@@ -1,10 +1,12 @@
 # Esquadro
 
-A [Claude Code](https://claude.com/claude-code) skill for engineering, industrial and sketch drawings: self-contained SVG with real scale, dimensions computed from the geometry, and a validator that catches what goes wrong in drawn-by-hand SVG.
+A [Claude Code](https://claude.com/claude-code) skill for hand-style sketches that explain things, and for the technical figures that support a document. Self-contained SVG that prints well in black and white, checked by a validator and looked at before delivery.
 
 *Esquadro* is Portuguese for a drafting set square.
 
-> **Em português:** skill para desenho técnico, industrial e croqui. Gera SVG sem dependências, que imprime bem em preto e branco, com escala declarada e cotas calculadas da própria geometria. O validador pega texto sobre texto, traço cruzando texto e elemento fora da folha, e a skill manda sempre renderizar e olhar antes de entregar. Instale com o comando abaixo e peça "desenha o corte de...". Versão inicial: as convenções de norma são aplicadas a partir de material aberto e não são certificação. Veja [BACKLOG.md](BACKLOG.md) (em português) e [references/standards.md](references/standards.md).
+![A sketch of a tank and pump in perspective, with numbered callouts and a legend](examples/explain_system.png)
+
+> **Em português:** skill para fazer croquis que explicam as coisas e figuras que dão suporte a documentos técnicos. Tem chamadas numeradas, notas à mão, sequência em quadros, certo e errado, volumes em perspectiva, pessoas e objetos, e figuras numeradas para o documento. Para quando a medida importa, tem também folhas técnicas com escala e cotas calculadas. O validador pega texto sobre texto, traço cortando texto e elemento fora da folha, e a skill manda sempre olhar a imagem antes de entregar. Instale com o comando abaixo e peça "faz um croqui explicando...". Veja [BACKLOG.md](BACKLOG.md) (em português).
 
 ## Install
 
@@ -12,9 +14,21 @@ A [Claude Code](https://claude.com/claude-code) skill for engineering, industria
 git clone https://github.com/LimaJoota/esquadro ~/.claude/skills/esquadro
 ```
 
-Then ask Claude to draw something: *"draw a dimensioned section of a flatbed trailer carrying six 800 mm pipes"* or *"faz um croqui do tubo corrugado com bolsa para o relatório"*.
+Then ask Claude to explain something with a drawing: *"sketch how to assemble this pipe joint, in three steps"* or *"faz um croqui mostrando por que precisa calçar a pilha, para o relatório"*.
 
 Needs Python 3.10 or later, standard library only. Tested on 3.14. Rendering and the most accurate text check use a local Chrome, Chromium or Edge. Without one, the validator falls back to bundled font metrics and says so.
+
+## Sketches that explain
+
+Pick the form by what the reader must understand. All of these are from [`examples/`](examples), with their scripts. Content is generic and illustrative.
+
+| How to do it, in order | Why one way is better |
+|---|---|
+| ![Three frames assembling a pipe joint](examples/explain_steps.png) | ![Two frames comparing a pipe stack with and without chocks](examples/explain_compare.png) |
+
+| Who does what | The same idea, as a technical sheet when measures matter |
+|---|---|
+| ![From order to delivery, with people, a document, a shed and a truck](examples/explain_flow.png) | ![Technical sheet: load section at 1:20 with dimensions and a title block](examples/cargo_section_technical.png) |
 
 ## Before and after
 
@@ -35,9 +49,9 @@ The same subject from a script, where each height is calculated from the pipe di
 
 ![The same load as a technical sheet: section at 1:20, dimensions, data table and title block](examples/cargo_section_technical.png)
 
-## Examples
+## Technical figures
 
-Each script in [`examples/`](examples) is complete, with its SVG and PNG alongside. All content is generic and illustrative.
+For when the drawing will be used to measure or build. Each comes in a sheet and in a sketch, from the same geometry.
 
 | Technical or industrial | Sketch |
 |---|---|
@@ -47,12 +61,16 @@ Each script in [`examples/`](examples) is complete, with its SVG and PNG alongsi
 
 ## What it does
 
-- **Three modes.** `technical`: clean strokes, thick and thin line weights, sheets with frame and title block, first-angle symbol. `sketch`: pencil tremor with SVG filters or computed strokes, plus a handwritten font. `industrial`: a small set of process symbols with named ports and orthogonal connections.
+- **Tools for explaining.** Numbered callouts with a legend, hand notes with curved arrows, frames for steps and comparisons, right and wrong marks, a loop around what matters, free spans such as "≈ 2 m", and three levels of finish.
+- **Things to draw with.** Boxes and cylinders in isometric perspective with hand shading, people, a truck, a building and a document.
+- **Fits in a document.** Figures sized to the A4 text width or half of it, with numbering and cross-references in HTML that stands alone.
+- **A pencil look that stays readable.** Tremor on the strokes only, through SVG filters or computed strokes, with a handwritten font chosen so the digits are unambiguous.
+- **Technical and industrial modes.** Clean strokes, thick and thin line weights, sheets with frame and title block, first-angle symbol, and a small set of process symbols with named ports and orthogonal connections.
 - **Dimensions from geometry.** A dimension measures the points it is given, through the view's scale. A stated value that disagrees raises an error unless it is marked not to scale, which underlines it. The validator re-checks printed numbers against the drawn lines, so a hand edit is caught too.
 - **Scale is declared or disclaimed.** The largest standard ratio that fits is chosen by calculation, or the drawing prints "SEM ESCALA" / "NOT TO SCALE".
 - **Self-contained output.** The font is embedded as a subset. There are no scripts or external files, and hatching is real clipped lines. It works inline in HTML, through `<img>`, and through Chrome's PDF.
 - **A validator for any SVG**, hand-written ones included: overlapping text, strokes through text, elements off the page or sheet frame, external references, missing scale, small or faint text, colors that look alike in black and white. It handles nested transforms, `<use>`, tspans, simple CSS and all path commands, and measures text with a real browser when it can.
-- **A method.** The skill tells Claude to calculate, validate, render and look at the image before delivering, and to say what was assumed.
+- **A method.** The skill tells Claude to start from what the reader must understand, then validate, render and look at the image before delivering, and to say what was assumed.
 
 ```bash
 python3 scripts/validate.py drawing.svg --annotate ringed.svg
@@ -82,11 +100,13 @@ Esquadro is younger and narrower than all of these. No code was copied from any 
 ## Limits, plainly
 
 - **Not a CAD system.** It produces 2D figures from scripts, with no 3D model behind them and no DXF yet.
+- **The perspective is simple.** Solids are painted far to near, with no automatic hiding, and only boxes and cylinders. The set of ready objects is small.
+- **A sketch can explain something wrong.** The drawing is checked for legibility, not for whether its content is true.
 - **Not certified to any standard.** Conventions are applied from open sources, and doubts are recorded in [references/standards.md](references/standards.md). Review against the purchased standard when a contract asks for conformity.
 - **Process symbols are simplified** and unverified against ISA-5.1 or ISO 10628. Not for issuing a P&ID.
 - **Rendering tested in Chrome only.** Other browsers, Inkscape and office programs have not been tried.
 - **In Chrome's PDF the sketch filter becomes an image** (about 270 dpi in testing). Text stays vector. `wobble="geometry"` keeps everything vector.
-- **The validator misses things a person sees**, such as a leader crossing a dimension or a cramped layout. That is why the skill also makes Claude look.
+- **The validator misses things a person sees**, such as a leader running through an object or a cramped layout. That is why the skill also makes Claude look.
 
 The plan to close these is in [BACKLOG.md](BACKLOG.md).
 
