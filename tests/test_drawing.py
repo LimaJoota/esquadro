@@ -199,6 +199,12 @@ def test_sketch_uses_the_tremor_filter_on_strokes_only() -> None:
     assert not re.search(r'<g id="esq-text"[^>]*filter=', svg)
 
 
+def test_filter_ids_differ_by_size_so_inline_svgs_do_not_clip_each_other() -> None:
+    small = Drawing(100, 60, "sketch").to_svg()
+    large = Drawing(300, 200, "sketch").to_svg()
+    assert re.search(r'<filter id="([^"]+)"', small).group(1) != re.search(r'<filter id="([^"]+)"', large).group(1)
+
+
 def test_technical_has_no_filter() -> None:
     d = Drawing(100, 60, "technical")
     d.line((10, 10), (90, 10))

@@ -806,7 +806,7 @@ class Drawing:
         """Self-contained SVG: no external fonts, scripts or images."""
         self._finish()
         style = self.style
-        filter_id = f"esq-wobble-{self.seed}"
+        filter_id = f"esq-wobble-{self.seed}-{self.width:g}x{self.height:g}"
         defs = []
         if embed_font:
             defs.append(f"<style>{self._font_face()}</style>")

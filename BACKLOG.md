@@ -79,7 +79,7 @@ ISO 5455 e ABNT NBR 8196.
 
 ### TEC-08 · Cortes completos · P0 · `NORMA PAGA`
 ABNT NBR 17006 e ISO 128 (partes de cortes).
-- **O que é:** corte total, meio corte, em desvio, parcial, rebatido e removido, com plano e rótulo automáticos, e seções de peças que não se cortam (eixos, nervuras).
+- **O que é:** corte total, meio corte, em desvio, parcial, rebatido e removido, com plano e rótulo automáticos, arestas visíveis atrás do plano de corte e seções de peças que não se cortam (eixos, nervuras).
 - **Por que importa:** é onde desenho técnico mais erra, e a v0.1 só oferece as peças soltas.
 - **Pronto quando:** um exemplo de cada tipo sai de geometria paramétrica; a seta e o rótulo do plano casam com a vista por script.
 
