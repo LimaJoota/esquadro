@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 Point = tuple[float, float]
 Rect = tuple[float, float, float, float]  # x, y, width, height
 
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 FONT_DIR = Path(__file__).resolve().parents[2] / "assets" / "fonts"
 METRICS: dict = json.loads((FONT_DIR / "metrics.json").read_text(encoding="utf-8"))
 

@@ -3,7 +3,7 @@ name: esquadro
 description: Draw hand-style sketches that explain things, and technical figures for documents, as checked, print-ready SVG. Use whenever a drawing would help someone understand, even if nobody asks for one by that name, or when the user says "desenha", "faz um desenho", "faz um croqui", "esboço", "esquema", "ilustra", "explica com desenho", "mostra como funciona", "passo a passo com figura", "figura para o relatório", "draw this", "sketch" or "illustrate". Covers how something is arranged, how to do it, right versus wrong, who does what, and also dimensioned sections, sheets with a title block, load arrangements and simplified process flows. Also use it to check an existing SVG for overlapping text, lines through labels or elements off the page. Not for software architecture or sequence diagrams, data charts, photos or artistic illustration.
 license: MIT
 metadata:
-  version: "0.3.0"
+  version: "0.4.0"
 ---
 
 # Esquadro

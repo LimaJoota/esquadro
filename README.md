@@ -46,6 +46,10 @@ Unedited output from a single run. The skill started by itself; nothing in the p
 
 The form follows from what the reader must understand. All of these are in [`examples/`](examples), with their scripts. Content is generic and illustrative.
 
+**Working out a load, in plain pencil**
+
+![Sketches of how many pipes fit on a truck, by diameter, with a side view of the deck and the height limit](examples/explain_load_plan_en.png)
+
 **How something is laid out, and what each part does**
 
 ![A tank, pump and piping in perspective with watercolour, numbered callouts and a legend, and a red loop around the pump](examples/explain_system_en.png)

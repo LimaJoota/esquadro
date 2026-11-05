@@ -49,12 +49,18 @@ def stage(svg: str, typed: str, status: str = "") -> str:
 
 def layers(svg: str) -> dict:
     """Split the SVG's drawing lines by what they are, keeping the wrapper, so it can build up in stages."""
+    # one row per pencil mark, so the drawing can appear stroke by stroke
+    svg = re.sub(
+        r'<g filter="(url\(#esq-grain-\d+\))">(.*?)</g>',
+        lambda m: "\n".join(f'<g filter="{m.group(1)}">{p}</g>' for p in re.findall(r"<path .*?/>", m.group(2))),
+        svg,
+    )
     rows = svg.split("\n")
     pens = ("#b3001b", "#2563c9")
     role: dict[int, str] = {}
     group = ""
     for i, row in enumerate(rows):
-        if row.startswith('<g id="'):
+        if row.startswith('<g id="') and row.endswith(">"):
             group = re.match(r'<g id="([^"]+)"', row).group(1)
             continue
         if row == "</g>":
@@ -109,7 +115,7 @@ def animation(browser: str, tmp: Path) -> None:
         shot(browser, html, target, WIDTH, HEIGHT)
         images.append(Image.open(target).convert("RGB").resize((WIDTH * 3 // 4, HEIGHT * 3 // 4), Image.LANCZOS))
         durations.append(ms)
-    palette = images[-1].quantize(colors=96, method=Image.MEDIANCUT, dither=Image.NONE)
+    palette = images[-1].quantize(colors=220, method=Image.MEDIANCUT, dither=Image.NONE)
     quant = [im.quantize(palette=palette, dither=Image.NONE) for im in images]
     quant[0].save(
         ROOT / "assets/demo.gif", save_all=True, append_images=quant[1:], duration=durations, loop=0, optimize=True

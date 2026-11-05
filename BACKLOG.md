@@ -12,10 +12,10 @@ Cada item traz o que é, por que importa e como saber que está pronto.
 
 | Versão | Itens |
 |---|---|
-| v0.2 e v0.3 (feitas) | Chamadas, notas à mão, quadros, cotas livres, ênfase, certo e errado, acabamentos, perspectiva básica, objetos, figuras numeradas, canetas, aquarela, plugin, CI |
-| v0.4: sketch melhor | EXP-01, EXP-02, EXP-03, EXP-04, EXP-05, SKE-04, SKE-06, QUA-04, QUA-06 |
-| v0.5: documentos | EXP-06, EXP-07, EXP-08, COR-01, COR-04, COR-05, SKE-03, SKE-05, SKE-07, QUA-02, QUA-11 |
-| v0.6: técnico de verdade | TEC-01, TEC-03, TEC-06, TEC-08, TEC-11, TEC-12, QUA-01, INT-01, IND-01, IND-03 |
+| v0.2 a v0.4 (feitas) | Chamadas, notas à mão, quadros, cotas livres, ênfase, certo e errado, acabamentos, perspectiva básica, objetos, figuras numeradas, canetas, aquarela, plugin, CI, traço de grafite |
+| v0.5: sketch melhor | EXP-11, EXP-01, EXP-02, EXP-03, EXP-04, EXP-05, EXP-12, SKE-04, QUA-04, QUA-06 |
+| v0.6: documentos | EXP-06, EXP-07, EXP-08, COR-01, COR-04, COR-05, SKE-03, SKE-05, SKE-07, QUA-02, QUA-11 |
+| v0.7: técnico de verdade | TEC-01, TEC-03, TEC-06, TEC-08, TEC-11, TEC-12, QUA-01, INT-01, IND-01, IND-03 |
 | Depois | Todo o restante |
 
 ## Situação das normas brasileiras
@@ -85,6 +85,16 @@ Parte das normas citadas com frequência foi substituída entre 2020 e 2022. O m
 - **O que é:** `d.wash()` e `color=` nos sólidos, com borda que vaza e pigmento acumulado, e versão chapada sem filtro. Falta variar a mancha por traço, escorrer e sobrepor com mais naturalidade.
 - **Por que importa:** dá um acabamento diferente e separa materiais sem hachura.
 - **Pronto quando:** numa comparação cega a mancha é aceita como aquarela, e a versão chapada é testada em Word, PowerPoint e Inkscape.
+
+### EXP-11 · Letra de verdade à mão · P0
+- **O que é:** variar cada letra repetida, em forma, inclinação, linha de base e pressão, em vez de repetir o desenho da fonte. Caminho provável: desenhar o texto como traços, em vez de usar uma fonte.
+- **Por que importa:** é hoje o ponto mais fraco do lápis. Ampliada, a mesma letra sempre tem a mesma forma, e isso entrega o computador.
+- **Pronto quando:** num texto ampliado, duas letras iguais não têm a mesma forma, e o texto continua legível e medido pelo validador.
+
+### EXP-12 · Grão que continua nítido no PDF · P1
+- **O que é:** hoje o Chrome transforma traços, letras e aquarela em imagem, a cerca de 290 dpi. O texto não pode ser selecionado.
+- **Por que importa:** num documento técnico, buscar e copiar texto faz falta, e o zoom extremo perde nitidez.
+- **Pronto quando:** o PDF mantém o texto selecionável por baixo do desenho, e o grão aguenta pelo menos 600 dpi.
 
 ---
 
@@ -342,10 +352,10 @@ ISO 5456-3.
 - **Por que importa:** dá variedade. Critério: dígito sem ambiguidade. A Architects Daughter foi rejeitada na v0.1 porque o 1 parece um l.
 - **Pronto quando:** `font="caveat"` funciona, com métricas e licença incluídas, e há teste de cobertura de caracteres.
 
-### SKE-06 · Tremor por traço de alta qualidade · P1
-- **O que é:** melhorar o modo `geometry` com pressão, passada dupla e variação de espessura, até igualar o filtro aprovado.
-- **Por que importa:** o filtro vira imagem no PDF do Chrome, e programas de escritório podem ignorá-lo. Traço calculado é vetor em qualquer lugar.
-- **Pronto quando:** numa comparação cega o resultado é aceito como lápis, e pode virar o padrão para PDF.
+### SKE-06 · Traço de grafite · feito na v0.4
+- **O que é:** cada traço é uma fita de largura variável, com pontas afinadas, segunda passada e grão de papel. `wobble="geometry"` mantém o mesmo traço, sem grão, todo em vetor.
+- **Por que importa:** o traço anterior só enganava de longe. De perto, parecia computador, e o dono do projeto reprovou.
+- **Pronto quando:** feito. Falta conferir em papel e em outros programas (QUA-11).
 
 ### SKE-07 · Papéis · P2
 - **O que é:** fundo de engenharia, quadriculado e pontilhado, que imprimem claros.

@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.0
 
 - Sketch strokes are now graphite: filled ribbons with varying pressure, tapered ends and a second pass, under a paper grain filter. `wobble="pencil"` replaces `"filter"`, and `"geometry"` is the same stroke without grain.
 - Caveat replaces Patrick Hand: the digits are clearer and it reads more like handwriting. Thinner lines and outline figures in place of stick figures.
