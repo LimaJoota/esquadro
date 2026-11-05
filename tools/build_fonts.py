@@ -3,7 +3,7 @@
 
 Requires: pip install fonttools brotli
 
-    python tools/build_fonts.py /path/to/Overpass[wght].ttf /path/to/PatrickHand-Regular.ttf
+    python tools/build_fonts.py /path/to/Overpass[wght].ttf /path/to/Caveat[wght].ttf
 """
 
 import json
@@ -49,9 +49,9 @@ def build(src: str, name: str) -> dict:
     return meta
 
 
-def main(overpass: str, patrick: str) -> None:
+def main(overpass: str, caveat: str) -> None:
     OUT.mkdir(parents=True, exist_ok=True)
-    metrics = {"overpass": build(overpass, "overpass"), "patrick-hand": build(patrick, "patrick-hand")}
+    metrics = {"overpass": build(overpass, "overpass"), "caveat": build(caveat, "caveat")}
     (OUT / "metrics.json").write_text(json.dumps(metrics, ensure_ascii=False, indent=0) + "\n", encoding="utf-8")
 
 

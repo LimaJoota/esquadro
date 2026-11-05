@@ -71,7 +71,7 @@ def main(lang: str = "pt") -> Path:
     y = f.at(0, 0.5)[1] + 2
     socket(d, f.x + 6, y, length=36)
     seal(d, f.x + 12, y)
-    hand_note(d, (f.x + 12, y - 12.8), (f.x, f.y + 2), t["ring"], 40, bend=0.1, size=3.6, ink="red")
+    hand_note(d, (f.x + 12, y - 12.8), (f.x, f.y + 2), t["ring"], 40, bend=0.1, ink="red")
 
     f = frames[1]
     y = f.at(0, 0.5)[1] + 2
@@ -79,7 +79,7 @@ def main(lang: str = "pt") -> Path:
     spigot(d, f.x + 16, y, length=16)
     seal(d, f.x + 28, y)
     d.line((f.x, y), (f.x + f.w - 3, y), "center")
-    hand_note(d, (f.x + 16, y + 11), (f.x, f.y + f.h - 8), t["axis"], 40, bend=-0.15, size=3.6)
+    hand_note(d, (f.x + 16, y + 11), (f.x, f.y + f.h - 8), t["axis"], 40, bend=-0.15)
 
     f = frames[2]
     y = f.at(0, 0.5)[1] + 2
@@ -87,7 +87,7 @@ def main(lang: str = "pt") -> Path:
     spigot(d, f.x + 18 + INSERTION, y, length=18 + INSERTION)
     seal(d, f.x + 24, y)
     flow_arrow(d, (f.x, y - 19), (f.x + 13, y - 19), ink="red")
-    hand_note(d, (f.x + 18, y + 10.5), (f.x + 2, f.y + f.h - 8), t["stop"], 42, bend=0.15, size=3.6, ink="blue")
+    hand_note(d, (f.x + 18, y + 10.5), (f.x + 2, f.y + f.h - 8), t["stop"], 42, bend=0.15, ink="blue")
     return d.save(OUT / f"explain_steps{'_en' if lang == 'en' else ''}.svg")
 
 

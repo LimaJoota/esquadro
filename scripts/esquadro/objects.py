@@ -184,23 +184,47 @@ class Iso:
 
 
 def person(d: Drawing, feet: Point, h: float = 24.0, *, arm: str = "down") -> dict:
-    """Simple standing figure. `arm`: 'down', 'up' or 'out'. Returns 'head' and 'hand' points."""
+    """Standing figure in outline, the way an architect sketches scale figures, seen from the front.
+
+    `arm`: 'down', 'up' or 'out', for the figure's raised side. Returns 'head' and 'hand' points.
+    """
     x, y = feet
-    head_r = h * 0.09
-    neck = y - h + 2 * head_r
-    hip = y - h * 0.47
-    d.circle((x, y - h + head_r), head_r)
-    d.line((x, neck), (x, hip), overshoot=False)
-    d.polyline([(x - h * 0.13, y), (x, hip), (x + h * 0.13, y)])
-    shoulder = neck + h * 0.07
-    d.line((x, shoulder), (x - h * 0.17, shoulder + h * 0.25), overshoot=False)
-    hand = {
-        "down": (x + h * 0.17, shoulder + h * 0.25),
-        "up": (x + h * 0.2, shoulder - h * 0.2),
-        "out": (x + h * 0.3, shoulder + h * 0.02),
-    }[arm]
-    d.line((x, shoulder), hand, overshoot=False)
-    return {"head": (x, y - h), "hand": hand}
+
+    def p(dx: float, up: float) -> Point:
+        return (x + dx * h, y - up * h)
+
+    right_body = [
+        (0.03, 0.845),
+        (0.105, 0.81),
+        (0.075, 0.70),
+        (0.065, 0.56),
+        (0.08, 0.47),
+        (0.07, 0.24),
+        (0.09, 0.015),
+        (0.085, 0.0),
+        (0.03, 0.0),
+        (0.022, 0.24),
+        (0.0, 0.43),
+    ]
+    left_body = [(-dx, up) for dx, up in reversed(right_body[:-1])]
+    d.polyline([p(*q) for q in right_body + left_body], closed=True, fill="#fff")
+
+    def limb(points: list[tuple[float, float]]) -> None:
+        d.polyline([p(*q) for q in points])
+
+    limb([(-0.105, 0.81), (-0.135, 0.63), (-0.125, 0.47), (-0.095, 0.47), (-0.1, 0.63), (-0.075, 0.70)])
+    if arm == "down":
+        limb([(0.105, 0.81), (0.135, 0.63), (0.125, 0.47), (0.095, 0.47), (0.1, 0.63), (0.075, 0.70)])
+        hand = p(0.11, 0.46)
+    elif arm == "up":
+        limb([(0.105, 0.81), (0.17, 0.92), (0.2, 1.03), (0.17, 1.04), (0.14, 0.94), (0.08, 0.74)])
+        hand = p(0.19, 1.05)
+    else:
+        limb([(0.105, 0.81), (0.24, 0.745), (0.34, 0.765), (0.34, 0.73), (0.23, 0.70), (0.078, 0.72)])
+        hand = p(0.35, 0.75)
+    head = p(0.0, 0.925)
+    d.circle(head, 0.068 * h, fill="#fff")
+    return {"head": p(0.0, 1.0), "hand": hand}
 
 
 def truck(d: Drawing, at: Point, length: float = 70.0, *, facing: str = "right") -> dict:

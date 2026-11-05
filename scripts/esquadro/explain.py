@@ -29,14 +29,14 @@ def circle_points(center: Point, rx: float, ry: float | None = None) -> list[Poi
     ]
 
 
-def marker(d: Drawing, at: Point, n: int | str, *, r: float = 3.2, ink: str | None = None) -> None:
+def marker(d: Drawing, at: Point, n: int | str, *, r: float = 2.6, ink: str | None = None) -> None:
     """Number in a circle, with white behind it, so it reads on top of the drawing."""
     with d.pen(ink):
         d.circle(at, r, "thin", fill="#fff")
         d.fit_text(at, str(n), 2 * r - 1.2, r * 1.15, min_size=2.0, anchor="middle", valign="middle")
 
 
-def callout(d: Drawing, target: Point, n: int | str, at: Point, *, r: float = 3.2, ink: str | None = None) -> None:
+def callout(d: Drawing, target: Point, n: int | str, at: Point, *, r: float = 2.6, ink: str | None = None) -> None:
     """Numbered marker at `at` with a line to a dot on `target`. Explain the numbers with `legend`."""
     with d.pen(ink):
         ux, uy = _unit(at, target)
@@ -50,8 +50,8 @@ def legend(
 ) -> float:
     """Numbered explanations matching the callouts, wrapped to `width`. Returns the y below the block."""
     size_mm = d.size(size)
-    r = 2.9
-    indent = 2 * r + 2.2
+    r = 2.3
+    indent = 2 * r + 1.8
     for i, item in enumerate(items, start=1):
         marker(d, (x + r, y + r), i, r=r)
         bottom = d.paragraph((x + indent, y + r + size_mm * 0.34), item, width - indent, size_mm)
@@ -157,7 +157,7 @@ def ring(d: Drawing, center: Point, rx: float, ry: float, *, turns: float = 1.12
         d.polyline(pts, "visible")
 
 
-def mark(d: Drawing, at: Point, ok: bool, *, size: float = 6.0, ink: str | None = None) -> None:
+def mark(d: Drawing, at: Point, ok: bool, *, size: float = 4.5, ink: str | None = None) -> None:
     """Right or wrong, as heavy strokes so it survives a black-and-white printer."""
     x, y = at
     s = size / 2
@@ -179,15 +179,15 @@ def flow_arrow(
 
 def _flow_arrow(d: Drawing, a: Point, b: Point, bend: float, label: str | None) -> None:
     dx, dy = b[0] - a[0], b[1] - a[1]
-    head = 4.5
+    head = 3.2
     length = math.hypot(dx, dy) or 1.0
     ux, uy = dx / length, dy / length
     stem_end = (b[0] - ux * head * 0.6, b[1] - uy * head * 0.6)
     c1 = (a[0] + dx * 0.33 - dy * bend, a[1] + dy * 0.33 + dx * bend)
     c2 = (a[0] + dx * 0.7 - dy * bend, a[1] + dy * 0.7 + dx * bend)
-    d.curve(a, c1, c2, stem_end, "visible")
+    d.curve(a, c1, c2, stem_end, "thin")
     tangent = _unit(c2, b)
-    d.arrow_head(b, tangent, layer_kind="visible", length=head, ratio=2.2)
+    d.arrow_head(b, tangent, layer_kind="thin", length=head, ratio=2.8)
     if label:
         d.text(((a[0] + b[0]) / 2, min(a[1], b[1]) - 2.5 - abs(bend) * length * 0.5), label, "dim", anchor="middle")
 
@@ -237,7 +237,7 @@ def panels(
             d.paragraph((x, y0 + size_mm * 0.75), titles[i], room, size_mm)
         if verdicts and verdicts[i] is not None:
             ink = ("blue" if verdicts[i] else "red") if colored else None
-            mark(d, (x + width - 3.5, y0 + 3.0), verdicts[i], size=5.5, ink=ink)
+            mark(d, (x + width - 3.0, y0 + 2.4), verdicts[i], size=4.2, ink=ink)
         if arrows and i < n - 1:
             mid = y0 + title_h + (h - title_h) / 2
             flow_arrow(d, (x + width + 2.0, mid), (x + width + gap - 2.0, mid))

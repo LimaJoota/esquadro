@@ -65,7 +65,7 @@ def main(lang: str = "pt") -> Path:
     ring(d, pump["side"], 13, 11, ink="red")
     span(d, (17, iso.p(22, 34, 0)[1] + 3), (17, iso.p(22, 34, 56)[1] - 3), t["size"])
 
-    legend(d, 118, 18, t["items"], 50, size=3.8)
+    legend(d, 118, 18, t["items"], 50)
     return d.save(OUT / f"explain_system{'_en' if lang == 'en' else ''}.svg")
 
 

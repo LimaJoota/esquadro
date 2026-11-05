@@ -118,7 +118,7 @@ def animation(browser: str, tmp: Path) -> None:
 
 def preview(browser: str, tmp: Path) -> None:
     data = base64.b64encode((ROOT / "examples/explain_system_en.svg").read_bytes()).decode()
-    font = base64.b64encode((ROOT / "assets/fonts/patrick-hand.woff2").read_bytes()).decode()
+    font = base64.b64encode((ROOT / "assets/fonts/caveat.woff2").read_bytes()).decode()
     html = (
         "<!doctype html><meta charset=utf-8><style>"
         f"@font-face{{font-family:H;src:url(data:font/woff2;base64,{font})}}"

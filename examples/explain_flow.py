@@ -54,8 +54,8 @@ def main(lang: str = "pt") -> Path:
 
     for x, label in zip((14, 70, 122, 159), t["labels"], strict=True):
         d.text((x, ground + 6), label, "label", anchor="middle")
-    hand_note(d, (order["top"][0] + 2, order["top"][1] - 1), (44, 14), t["paper"], 42, bend=-0.2, size=3.8, ink="blue")
-    hand_note(d, (left + 15, bed - 10), (102, 18), t["check"], 38, bend=0.15, size=3.8, ink="red")
+    hand_note(d, (order["top"][0] + 2, order["top"][1] - 1), (44, 14), t["paper"], 42, bend=-0.2, ink="blue")
+    hand_note(d, (left + 15, bed - 10), (102, 18), t["check"], 38, bend=0.15, ink="red")
     return d.save(OUT / f"explain_flow{'_en' if lang == 'en' else ''}.svg")
 
 

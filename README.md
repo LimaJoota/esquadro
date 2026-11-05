@@ -162,4 +162,4 @@ python3 examples/build_all.py
 
 ## License
 
-Code and examples: [MIT](LICENSE). Bundled fonts, under the SIL Open Font License 1.1 and subset for size: [Overpass](assets/fonts/OFL-overpass.txt) and [Patrick Hand](assets/fonts/OFL-patrick-hand.txt). Generated drawings embed these fonts, which the OFL allows. Your drawings are yours.
+Code and examples: [MIT](LICENSE). Bundled fonts, under the SIL Open Font License 1.1 and subset for size: [Overpass](assets/fonts/OFL-overpass.txt) and [Caveat](assets/fonts/OFL-caveat.txt). Generated drawings embed these fonts, which the OFL allows. Your drawings are yours.

@@ -68,9 +68,7 @@ def main(lang: str = "pt", finish: str = "study", name: str | None = None) -> Pa
     edge = max(c[0] for c in centres)
     flow_arrow(d, (edge + R + 2, y - R), (edge + R + 15, y - R), ink="red")
     ring(d, (edge, y - R), R + 2.2, R + 2.2, ink="red")
-    hand_note(
-        d, (edge + 3, y - 2 * R - 3), (bad.at(0.62, 0)[0], bad.y + 2), t["bad"], 30, bend=0.18, size=3.6, ink="red"
-    )
+    hand_note(d, (edge + 3, y - 2 * R - 3), (bad.at(0.62, 0)[0], bad.y + 2), t["bad"], 30, bend=0.18, ink="red")
 
     y = good.y + good.h - 6
     cx = good.at(0.47, 0)[0]
@@ -83,7 +81,7 @@ def main(lang: str = "pt", finish: str = "study", name: str | None = None) -> Pa
     ):
         d.polygon(chock, fill="#fff")
         d.wash(chock, "blue", strength=1.4)
-    hand_note(d, (edge + 4, y - 7), (good.at(0.66, 0)[0], good.y + 2), t["good"], 28, bend=0.2, size=3.6, ink="blue")
+    hand_note(d, (edge + 4, y - 7), (good.at(0.66, 0)[0], good.y + 2), t["good"], 28, bend=0.2, ink="blue")
     return d.save(OUT / f"{name or 'explain_compare' + ('_en' if lang == 'en' else '')}.svg")
 
 

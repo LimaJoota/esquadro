@@ -242,7 +242,7 @@ def test_text_is_escaped() -> None:
 def test_metrics_cover_portuguese_and_drawing_symbols() -> None:
     for ch in "çãõáéíóúâêôÇÃØ±°":
         assert text_width(ch, 10, "overpass") > 0
-        assert text_width(ch, 10, "patrick-hand") > 0
+        assert text_width(ch, 10, "caveat") > 0
 
 
 def test_paragraph_wraps_inside_its_width() -> None:

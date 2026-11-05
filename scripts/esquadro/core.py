@@ -128,16 +128,17 @@ _TECH_LINES = {
     "border": LineKind(0.7),
     "signal": LineKind(0.25, (2.5, 1.5), True),
 }
+# A pencil is a thin, even line: about 0.3 mm on a figure printed at 170 mm wide.
 _SKETCH_LINES = {
-    "visible": LineKind(0.6),
-    "thin": LineKind(0.3, (), True),
-    "hatch": LineKind(0.25),
-    "hidden": LineKind(0.3, (3.5, 2)),
-    "center": LineKind(0.3, (11, 2, 2, 2), True),
-    "phantom": LineKind(0.3, (11, 2, 2, 2, 2, 2), True),
-    "cutting": LineKind(0.3, (11, 2, 2, 2), True),
-    "border": LineKind(0.8),
-    "signal": LineKind(0.3, (3, 2), True),
+    "visible": LineKind(0.3),
+    "thin": LineKind(0.2, (), True),
+    "hatch": LineKind(0.14),
+    "hidden": LineKind(0.2, (3, 1.6)),
+    "center": LineKind(0.18, (9, 1.6, 1.6, 1.6), True),
+    "phantom": LineKind(0.18, (9, 1.6, 1.6, 1.6, 1.6, 1.6), True),
+    "cutting": LineKind(0.18, (9, 1.6, 1.6, 1.6), True),
+    "border": LineKind(0.38),
+    "signal": LineKind(0.2, (2.6, 1.6), True),
 }
 STYLES = {
     "technical": Style(
@@ -151,13 +152,13 @@ STYLES = {
         "butt",
     ),
     "sketch": Style(
-        "patrick-hand",
+        "caveat",
         "Esquadro Sketch",
-        "'Segoe Print','Bradley Hand','Comic Sans MS',cursive",
-        "#1a1a1a",
-        {"dim": 3.6, "label": 4.2, "heading": 6, "title": 8},
+        "'Bradley Hand','Segoe Print',cursive",
+        "#222",
+        {"dim": 3.5, "label": 3.9, "heading": 5.4, "title": 7.5},
         _SKETCH_LINES,
-        3.2,
+        2.4,
         "round",
     ),
 }
@@ -177,9 +178,9 @@ WASHES = {
 
 # Sketch finish: tremor amount, tremor frequency, corner overshoot multiplier.
 FINISHES = {
-    "napkin": (1.9, 0.07, 1.8),
-    "study": (1.1, 0.09, 1.0),
-    "clean": (0.5, 0.12, 0.4),
+    "napkin": (1.0, 0.11, 1.0),
+    "study": (0.5, 0.156, 0.35),
+    "clean": (0.25, 0.2, 0.1),
 }
 
 
@@ -350,13 +351,13 @@ class Drawing:
     def wash(self, pts: Sequence[Point], color: str = "blue", *, strength: float = 1.0) -> None:
         """Watercolour over what is already drawn: pencil shows through. Add it after an outline, before its hatching."""
         fill = WASHES.get(color, color)
-        opacity = min(1.0, 0.6 * strength)
+        opacity = min(1.0, 0.42 * strength)
         if self._wash_mode == "filter":
             self._uses_wash_filter = True
             coords = " ".join(f"{fmt(x)},{fmt(y)}" for x, y in pts)
             self._geometry.append(
                 f'<polygon points="{coords}" fill="{fill}" fill-opacity="{fmt(opacity)}" stroke="{fill}" '
-                f'stroke-opacity="{fmt(opacity * 0.6)}" stroke-width="0.8" stroke-linejoin="round" '
+                f'stroke-opacity="{fmt(opacity * 0.6)}" stroke-width="0.5" stroke-linejoin="round" '
                 f'filter="url(#{self._wash_filter_id()})" data-esq-role="wash"/>'
             )
             return
@@ -374,7 +375,7 @@ class Drawing:
             f'<filter id="{self._wash_filter_id()}" filterUnits="userSpaceOnUse" x="0" y="0" '
             f'width="{fmt(self.width)}" height="{fmt(self.height)}" color-interpolation-filters="sRGB">'
             f'<feTurbulence type="fractalNoise" baseFrequency="0.07" numOctaves="3" seed="{self.seed + 1}" result="edge"/>'
-            '<feDisplacementMap in="SourceGraphic" in2="edge" scale="3.2" xChannelSelector="R" '
+            '<feDisplacementMap in="SourceGraphic" in2="edge" scale="2.2" xChannelSelector="R" '
             'yChannelSelector="G" result="bled"/>'
             f'<feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="4" seed="{self.seed + 2}" result="tone"/>'
             '<feColorMatrix in="tone" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2.1 0 0 0 -0.2" result="pool"/>'
@@ -503,7 +504,7 @@ class Drawing:
             prev = a
             for i in range(1, steps + 1):
                 t = i / steps
-                wave = 0.0 if i == steps else self.rng.uniform(-0.45, 0.45) * FINISHES[self.finish][0] / 1.1
+                wave = 0.0 if i == steps else self.rng.uniform(-0.3, 0.3) * FINISHES[self.finish][0] / 0.5
                 cur = (a[0] + (b[0] - a[0]) * t + nx * wave, a[1] + (b[1] - a[1]) * t + ny * wave)
                 ctrl = ((prev[0] + cur[0]) / 2 + nx * wave * 0.5, (prev[1] + cur[1]) / 2 + ny * wave * 0.5)
                 out.append(f"Q{fmt(ctrl[0])} {fmt(ctrl[1])} {fmt(cur[0])} {fmt(cur[1])}")

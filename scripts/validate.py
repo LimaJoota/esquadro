@@ -43,7 +43,7 @@ XLINK = "{http://www.w3.org/1999/xlink}href"
 METRICS = json.loads(
     (Path(__file__).resolve().parents[1] / "assets" / "fonts" / "metrics.json").read_text(encoding="utf-8")
 )
-EMBEDDED_FAMILIES = {"esquadro tech": "overpass", "esquadro sketch": "patrick-hand"}
+EMBEDDED_FAMILIES = {"esquadro tech": "overpass", "esquadro sketch": "caveat"}
 GENERIC_WIDTH = {"mono": 0.62, "serif": 0.5, "sans": 0.56, "hand": 0.48}
 SKIP_TAGS = {
     "defs",
@@ -673,7 +673,7 @@ def font_key(style: dict) -> tuple[str | None, str]:
         return EMBEDDED_FAMILIES[first], "embedded"
     if any(w in family for w in ("mono", "courier", "consolas", "menlo")):
         return None, "mono"
-    if any(w in family for w in ("cursive", "caveat", "hand", "comic", "patrick", "kalam", "virgil")):
+    if any(w in family for w in ("cursive", "caveat", "hand", "comic", "kalam", "virgil")):
         return None, "hand"
     if any(w in family for w in ("serif", "times", "georgia")) and "sans" not in family:
         return None, "serif"
