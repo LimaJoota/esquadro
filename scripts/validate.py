@@ -97,6 +97,7 @@ class Shape:
     role: str | None = None
     clipped: bool = False
     opaque: bool = True
+    box: tuple[float, float, float, float] | None = None
 
 
 @dataclass
@@ -299,7 +300,7 @@ def path_points(d: str) -> list[list[Point]]:
                     end = (base[0] + a[0], base[1] + a[1])
                 c1 = (pos[0] + 2 / 3 * (q[0] - pos[0]), pos[1] + 2 / 3 * (q[1] - pos[1]))
                 c2 = (end[0] + 2 / 3 * (q[0] - end[0]), end[1] + 2 / 3 * (q[1] - end[1]))
-                cur.extend(flatten_cubic(pos, c1, c2, end, 8))
+                cur.extend(flatten_cubic(pos, c1, c2, end, 8 if math.dist(pos, end) > 3 else 2))
                 pos, ctrl = end, q
             elif kind == "A":
                 a = take(7)
@@ -878,6 +879,10 @@ def check_text_crossed(doc: Document, tol: float, issues: list[Issue]) -> None:
             if not has_edge:
                 continue
             if shape.order > text.order and shape.fill and shape.closed and not shape.stroke:
+                continue
+            if shape.box is None:
+                shape.box = bbox([p for seg in shape.segments for p in seg])
+            if shape.box[2] < box[0] or shape.box[0] > box[2] or shape.box[3] < box[1] or shape.box[1] > box[3]:
                 continue
             hit = None
             for a, b in shape.segments:

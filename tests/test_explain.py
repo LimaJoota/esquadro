@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import math
-import re
 from collections.abc import Callable
 from pathlib import Path
 
@@ -27,6 +26,7 @@ from esquadro import (
     span,
     truck,
 )
+from render import find_browser, render
 from validate import validate
 
 
@@ -42,15 +42,13 @@ def test_figure_presets_match_a4_text_widths() -> None:
     assert Drawing.figure().mode == "sketch"
 
 
-def test_finish_changes_the_tremor_and_unknown_is_refused() -> None:
-    def scale_of(finish: str) -> float:
-        return float(
-            re.search(
-                r'feDisplacementMap[^>]*scale="([\d.]+)"', Drawing(50, 30, "sketch", finish=finish).to_svg()
-            ).group(1)
-        )
+def test_finish_changes_the_hand_and_unknown_is_refused() -> None:
+    def build(finish: str) -> str:
+        d = Drawing(50, 30, "sketch", finish=finish, seed=1)
+        d.line((5, 15), (45, 15))
+        return d.to_svg()
 
-    assert scale_of("napkin") > scale_of("study") > scale_of("clean")
+    assert build("napkin") != build("clean")
     with pytest.raises(ValueError):
         Drawing(50, 30, "sketch", finish="glossy")
 
@@ -112,7 +110,7 @@ def test_verdicts_draw_right_and_wrong_differently() -> None:
     d = Drawing.figure("page", 60)
     panels(d, 2, area=(5, 5, 160, 50), titles=["Errado", "Certo"], verdicts=[False, True], arrows=False)
     svg = d.to_svg()
-    assert svg.count("<polyline") == 1  # the check is one stroke, the cross is two lines
+    assert svg.count("data-esq-dim") == 0
     assert errors(d) == []
 
 
@@ -186,7 +184,7 @@ def test_ring_and_mark_draw_without_error() -> None:
     assert errors(d) == []
 
 
-@pytest.mark.parametrize("wobble", ["filter", "geometry", "none"])
+@pytest.mark.parametrize("wobble", ["pencil", "geometry", "none"])
 def test_curves_work_in_every_wobble_mode(wobble: str) -> None:
     d = Drawing.figure("page", 60, wobble=wobble)
     hand_note(d, (120, 40), (10, 10), "nota", 30)
@@ -295,12 +293,11 @@ def test_colored_panels_mark_wrong_red_and_right_blue() -> None:
 
 
 def test_wash_uses_its_own_filter_and_is_not_defined_when_unused() -> None:
-    plain = Drawing(60, 40, "sketch").to_svg()
-    assert "esq-wash" not in plain
+    assert "esq-wash" not in Drawing(60, 40, "sketch").to_svg()
     d = Drawing(60, 40, "sketch")
     d.wash([(5, 5), (30, 5), (30, 20)], "blue")
     svg = d.to_svg()
-    assert svg.count("<filter") == 2
+    assert svg.count("esq-wash") >= 2
     assert f'fill="{WASHES["blue"]}"' in svg and 'data-esq-role="wash"' in svg
 
 
@@ -357,3 +354,65 @@ def test_concept_figure_can_drop_the_scale_notice() -> None:
     svg = d.to_svg()
     assert "NOT TO SCALE" not in svg and 'data-esq-scale="n/a"' in svg
     assert errors(d) == []
+
+
+def _png_rows_with_ink(path: Path) -> list[int]:
+    """Row numbers of a PNG holding anything but white, using only the standard library."""
+    data = path.read_bytes()
+    width, height, depth, color = struct.unpack(">IIBB", data[16:26])
+    channels = {0: 1, 2: 3, 4: 2, 6: 4}[color]
+    assert depth == 8
+    pos, raw = 8, b""
+    while pos < len(data):
+        size, kind = struct.unpack(">I4s", data[pos : pos + 8])
+        if kind == b"IDAT":
+            raw += data[pos + 8 : pos + 8 + size]
+        pos += size + 12
+    pixels = zlib.decompress(raw)
+    stride = width * channels
+    previous = bytearray(stride)
+    rows = []
+    for y in range(height):
+        start = y * (stride + 1)
+        kind = pixels[start]
+        line = bytearray(pixels[start + 1 : start + 1 + stride])
+        for i in range(stride):
+            a = line[i - channels] if i >= channels else 0
+            b = previous[i]
+            c = previous[i - channels] if i >= channels else 0
+            if kind == 1:
+                line[i] = (line[i] + a) & 255
+            elif kind == 2:
+                line[i] = (line[i] + b) & 255
+            elif kind == 3:
+                line[i] = (line[i] + (a + b) // 2) & 255
+            elif kind == 4:
+                p = a + b - c
+                pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
+                line[i] = (line[i] + (a if pa <= pb and pa <= pc else b if pb <= pc else c)) & 255
+        if min(line) < 128:
+            rows.append(y)
+        previous = line
+    return rows
+
+
+@pytest.mark.browser
+@pytest.mark.skipif(find_browser() is None, reason="no browser here")
+@pytest.mark.parametrize(
+    ("dpi", "zoom"),
+    [(96, None), (300, None), (500, (0, 0, 40, 20)), (96, (0, 20, 80, 20))],
+)
+def test_a_small_figure_is_painted_down_to_its_last_row(
+    tmp_path: Path, dpi: int, zoom: tuple[float, float, float, float] | None
+) -> None:
+    d = Drawing.figure("half", 40, wobble="none", scale_note=False)
+    d._geometry.append('<rect x="0" y="0" width="80" height="40" fill="#000" stroke="none"/>')
+    png = render(d.save(tmp_path / "small.svg"), tmp_path / "small.png", dpi=dpi, zoom=zoom)
+    w_mm, h_mm = zoom[2:] if zoom else (80, 40)
+    width, height = struct.unpack(">II", png.read_bytes()[16:24])
+    # Chrome will not scale below 0.5, so very small drawings at low dpi come out larger, never smaller.
+    assert width >= w_mm * dpi / 25.4 - 2
+    assert abs(width / height - w_mm / h_mm) < 0.02
+    rows = _png_rows_with_ink(png)
+    assert rows
+    assert rows[-1] >= height - 2

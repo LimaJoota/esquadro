@@ -11,12 +11,15 @@ import itertools
 import json
 import math
 import random
+import re
 from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 from xml.sax.saxutils import escape
+
+from .pencil import strokes
 
 if TYPE_CHECKING:
     from .view import View
@@ -130,15 +133,15 @@ _TECH_LINES = {
 }
 # A pencil is a thin, even line: about 0.3 mm on a figure printed at 170 mm wide.
 _SKETCH_LINES = {
-    "visible": LineKind(0.3),
-    "thin": LineKind(0.2, (), True),
-    "hatch": LineKind(0.14),
-    "hidden": LineKind(0.2, (3, 1.6)),
-    "center": LineKind(0.18, (9, 1.6, 1.6, 1.6), True),
-    "phantom": LineKind(0.18, (9, 1.6, 1.6, 1.6, 1.6, 1.6), True),
-    "cutting": LineKind(0.18, (9, 1.6, 1.6, 1.6), True),
-    "border": LineKind(0.38),
-    "signal": LineKind(0.2, (2.6, 1.6), True),
+    "visible": LineKind(0.42),
+    "thin": LineKind(0.28, (), True),
+    "hatch": LineKind(0.2),
+    "hidden": LineKind(0.28, (3, 1.6)),
+    "center": LineKind(0.24, (9, 1.6, 1.6, 1.6), True),
+    "phantom": LineKind(0.24, (9, 1.6, 1.6, 1.6, 1.6, 1.6), True),
+    "cutting": LineKind(0.24, (9, 1.6, 1.6, 1.6), True),
+    "border": LineKind(0.5),
+    "signal": LineKind(0.28, (2.6, 1.6), True),
 }
 STYLES = {
     "technical": Style(
@@ -155,7 +158,7 @@ STYLES = {
         "caveat",
         "Esquadro Sketch",
         "'Bradley Hand','Segoe Print',cursive",
-        "#222",
+        "#2e2e2e",
         {"dim": 3.5, "label": 3.9, "heading": 5.4, "title": 7.5},
         _SKETCH_LINES,
         2.4,
@@ -176,12 +179,18 @@ WASHES = {
     "gray": "#a8adb3",
 }
 
-# Sketch finish: tremor amount, tremor frequency, corner overshoot multiplier.
+# Sketch finish: hand unsteadiness in mm, corner overshoot, chance of a second pass on a firm line.
 FINISHES = {
-    "napkin": (1.0, 0.11, 1.0),
-    "study": (0.5, 0.156, 0.35),
-    "clean": (0.25, 0.2, 0.1),
+    "napkin": (0.2, 1.0, 0.8),
+    "study": (0.09, 0.35, 0.55),
+    "clean": (0.04, 0.1, 0.2),
 }
+# Tone of each line kind in pencil: firm lines nearly full, construction lines lighter.
+PENCIL_TONE = {"visible": 0.92, "border": 0.95, "thin": 0.86, "hatch": 0.62}
+
+
+class _Ink(str):
+    """A pencil mark: runs of these share one grain filter when the SVG is assembled."""
 
 
 def text_width(text: str, size: float, font: str = "overpass") -> float:
@@ -254,15 +263,15 @@ class Drawing:
         title: str = "",
         description: str = "",
         seed: int = 7,
-        wobble: str = "filter",
+        wobble: str = "pencil",
         finish: str = "study",
         wash: str | None = None,
         scale_note: bool = True,
     ) -> None:
         if mode not in STYLES:
             raise ValueError(f"unknown mode {mode!r}; use one of {sorted(STYLES)}")
-        if wobble not in ("filter", "geometry", "none"):
-            raise ValueError("wobble must be 'filter', 'geometry' or 'none'")
+        if wobble not in ("pencil", "geometry", "none"):
+            raise ValueError("wobble must be 'pencil', 'geometry' or 'none'")
         if finish not in FINISHES:
             raise ValueError(f"unknown finish {finish!r}; use one of {sorted(FINISHES)}")
         self.finish = finish
@@ -493,6 +502,100 @@ class Drawing:
             out += ' stroke-dasharray="' + " ".join(fmt(d) for d in line.dash) + '"'
         return out
 
+    @property
+    def _draws_pencil(self) -> bool:
+        return self.wobble in ("pencil", "geometry")
+
+    def _fill_only(self, pts: Sequence[Point], fill: str, kind: str) -> None:
+        """The fill of a shape, painted before its pencil outline and free of grain."""
+        coords = " ".join(f"{fmt(x)},{fmt(y)}" for x, y in pts)
+        self._layer(kind).append(f'<polygon points="{coords}" fill="{fill}" stroke="none"/>')
+
+    def _pencil(self, pts: Sequence[Point], kind: str, *, attrs: str = "") -> None:
+        """Draw a path as graphite. A dimension line's exact ends go in an invisible line, for the validator."""
+        line = self._kind(kind)
+        layer = self._layer(kind)
+        identity = re.search(r'\bid="[^"]+"', attrs)
+        if identity:
+            layer.append(
+                f'<line x1="{fmt(pts[0][0])}" y1="{fmt(pts[0][1])}" x2="{fmt(pts[-1][0])}" y2="{fmt(pts[-1][1])}" '
+                f'stroke="none" {attrs}/>'
+            )
+            attrs = attrs.replace(identity.group(0), "").strip()
+        unsteady, _, second = FINISHES[self.finish]
+        firm = kind in ("visible", "border")
+        marks = strokes(
+            self.rng,
+            pts,
+            line.width,
+            self.ink,
+            PENCIL_TONE.get(kind, 0.82),
+            dash=line.dash,
+            jitter=unsteady if firm or kind == "hatch" else unsteady * 0.6,
+            bow_limit=0.3 if firm else 0.1,
+            second_pass=second if firm else 0.0,
+            attrs=attrs,
+        )
+        layer.extend(_Ink(mark) for mark in marks if mark)
+
+    def _grain_id(self) -> str:
+        return f"esq-grain-{self.seed}"
+
+    def _grain_filter(self) -> str:
+        """Graphite on paper: the edge frays, fine grain breaks the line, and tone drifts along its length."""
+        return (
+            f'<filter id="{self._grain_id()}" x="-5%" y="-5%" width="110%" height="110%" '
+            'color-interpolation-filters="sRGB">'
+            f'<feTurbulence type="fractalNoise" baseFrequency="4.5" numOctaves="2" seed="{self.seed}" result="fray"/>'
+            '<feDisplacementMap in="SourceGraphic" in2="fray" scale="0.2" xChannelSelector="R" yChannelSelector="G" '
+            'result="rough"/>'
+            f'<feTurbulence type="fractalNoise" baseFrequency="6.5" numOctaves="3" seed="{self.seed + 3}" result="tooth"/>'
+            '<feColorMatrix in="tooth" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 3.4 0 0 0 -0.72" '
+            'result="grain"/>'
+            f'<feTurbulence type="fractalNoise" baseFrequency="0.22" numOctaves="2" seed="{self.seed + 5}" result="drift"/>'
+            '<feColorMatrix in="drift" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.1 0 0 0 0.42" '
+            'result="tone"/>'
+            '<feComposite in="rough" in2="grain" operator="in" result="grainy"/>'
+            '<feComposite in="grainy" in2="tone" operator="in"/>'
+            "</filter>"
+        )
+
+    def _lettering_filter(self) -> str:
+        """Lighter than on the lines: letters are small, and they must stay readable."""
+        return (
+            f'<filter id="{self._grain_id()}-text" x="-2%" y="-2%" width="104%" height="104%" '
+            'color-interpolation-filters="sRGB">'
+            f'<feTurbulence type="fractalNoise" baseFrequency="5" numOctaves="2" seed="{self.seed + 7}" result="fray"/>'
+            '<feDisplacementMap in="SourceGraphic" in2="fray" scale="0.07" xChannelSelector="R" yChannelSelector="G" '
+            'result="rough"/>'
+            f'<feTurbulence type="fractalNoise" baseFrequency="7" numOctaves="3" seed="{self.seed + 9}" result="tooth"/>'
+            '<feColorMatrix in="tooth" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2.2 0 0 0 0.02" '
+            'result="grain"/>'
+            '<feComposite in="rough" in2="grain" operator="in"/>'
+            "</filter>"
+        )
+
+    def _assemble(self, layer: list[str]) -> list[str]:
+        """Group runs of pencil marks under the grain filter, leaving fills and washes out of it."""
+        if self.wobble != "pencil":
+            return list(layer)
+        out: list[str] = []
+        run: list[str] = []
+
+        def flush() -> None:
+            if run:
+                out.append(f'<g filter="url(#{self._grain_id()})">' + "".join(run) + "</g>")
+                run.clear()
+
+        for item in layer:
+            if isinstance(item, _Ink):
+                run.append(item)
+            else:
+                flush()
+                out.append(item)
+        flush()
+        return out
+
     def _hand_path(self, pts: Sequence[Point], closed: bool = False) -> str:
         """Geometry-based tremor: the stroke itself is jittered, so it stays vector everywhere."""
         seq = list(pts) + ([pts[0]] if closed else [])
@@ -504,7 +607,7 @@ class Drawing:
             prev = a
             for i in range(1, steps + 1):
                 t = i / steps
-                wave = 0.0 if i == steps else self.rng.uniform(-0.3, 0.3) * FINISHES[self.finish][0] / 0.5
+                wave = 0.0 if i == steps else self.rng.uniform(-0.3, 0.3)
                 cur = (a[0] + (b[0] - a[0]) * t + nx * wave, a[1] + (b[1] - a[1]) * t + ny * wave)
                 ctrl = ((prev[0] + cur[0]) / 2 + nx * wave * 0.5, (prev[1] + cur[1]) / 2 + ny * wave * 0.5)
                 out.append(f"Q{fmt(ctrl[0])} {fmt(ctrl[1])} {fmt(cur[0])} {fmt(cur[1])}")
@@ -515,13 +618,13 @@ class Drawing:
         if self.sketch and overshoot and kind == "visible" and math.dist(p1, p2) > 6:
             length = math.dist(p1, p2)
             ux, uy = (p2[0] - p1[0]) / length, (p2[1] - p1[1]) / length
-            push = FINISHES[self.finish][2]
+            push = FINISHES[self.finish][1]
             a, b = self.rng.uniform(0.3, 1.1) * push, self.rng.uniform(0.3, 1.1) * push
             p1, p2 = (p1[0] - ux * a, p1[1] - uy * a), (p2[0] + ux * b, p2[1] + uy * b)
         layer = self._layer(kind)
         extra = f" {attrs}" if attrs else ""
-        if self.wobble == "geometry":
-            layer.append(f'<path d="{self._hand_path([p1, p2])}" {self._stroke_attrs(kind)}{extra}/>')
+        if self._draws_pencil:
+            self._pencil([p1, p2], kind, attrs=attrs)
             return
         layer.append(
             f'<line x1="{fmt(p1[0])}" y1="{fmt(p1[1])}" x2="{fmt(p2[0])}" y2="{fmt(p2[1])}" '
@@ -541,15 +644,16 @@ class Drawing:
         layer = self._layer(kind)
         if self.sketch and overshoot and kind == "visible":
             if fill:
-                self.polyline(pts, "hatch", closed=True, fill=fill)
+                self._fill_only(pts, fill, kind)
             seq = list(pts) + ([pts[0]] if closed else [])
             for a, b in itertools.pairwise(seq):
                 self.line(a, b, kind)
             return
         fill_attr = f'fill="{fill}"' if fill else 'fill="none"'
-        if self.wobble == "geometry":
-            d = self._hand_path(pts, closed)
-            layer.append(f'<path d="{d}" {fill_attr} {self._stroke_attrs(kind)}/>')
+        if self._draws_pencil:
+            if fill:
+                self._fill_only(pts, fill, kind)
+            self._pencil(list(pts) + ([pts[0], pts[1]] if closed and len(pts) > 1 else []), kind)
             return
         tag = "polygon" if closed else "polyline"
         coords = " ".join(f"{fmt(x)},{fmt(y)}" for x, y in pts)
@@ -564,14 +668,20 @@ class Drawing:
     def circle(self, center: Point, radius: float, kind: str = "visible", *, fill: str | None = None) -> None:
         layer = self._layer(kind)
         fill_attr = f'fill="{fill}"' if fill else 'fill="none"'
-        if self.wobble == "geometry":
-            n = max(16, int(2 * math.pi * radius / 2.5))
+        if self._draws_pencil:
+            n = max(20, int(2 * math.pi * radius / 1.2))
+            start = self.rng.uniform(0, 2 * math.pi)
+            overlap = 1.0 + min(0.1, 3.0 / max(2 * math.pi * radius, 1.0))
             pts = [
-                (center[0] + radius * math.cos(2 * math.pi * i / n), center[1] + radius * math.sin(2 * math.pi * i / n))
-                for i in range(n)
+                (
+                    center[0] + radius * math.cos(start + 2 * math.pi * overlap * i / n),
+                    center[1] + radius * math.sin(start + 2 * math.pi * overlap * i / n),
+                )
+                for i in range(n + 1)
             ]
-            d = self._hand_path(pts, True)
-            layer.append(f'<path d="{d}" {fill_attr} {self._stroke_attrs(kind)}/>')
+            if fill:
+                self._fill_only(pts, fill, kind)
+            self._pencil(pts, kind)
             return
         layer.append(
             f'<circle cx="{fmt(center[0])}" cy="{fmt(center[1])}" r="{fmt(radius)}" {fill_attr} '
@@ -597,8 +707,8 @@ class Drawing:
         """Cubic curve, optionally with an arrowhead on `p3` that follows the curve's end direction."""
         layer = self._layer(kind)
         extra = f" {attrs}" if attrs else ""
-        if self.wobble == "geometry":
-            steps = max(6, int(math.dist(p0, p3) / 5))
+        if self._draws_pencil:
+            steps = max(6, int(math.dist(p0, p3) / 2))
             pts = []
             for i in range(steps + 1):
                 t = i / steps
@@ -609,7 +719,7 @@ class Drawing:
                         u**3 * p0[1] + 3 * u**2 * t * c1[1] + 3 * u * t**2 * c2[1] + t**3 * p3[1],
                     )
                 )
-            layer.append(f'<path d="{self._hand_path(pts)}" {self._stroke_attrs(kind)}{extra}/>')
+            self._pencil(pts, kind, attrs=attrs)
         else:
             d = (
                 f"M{fmt(p0[0])} {fmt(p0[1])}C{fmt(c1[0])} {fmt(c1[1])} "
@@ -946,24 +1056,16 @@ class Drawing:
         """Self-contained SVG: no external fonts, scripts or images."""
         self._finish()
         style = self.style
-        filter_id = f"esq-wobble-{self.seed}-{self.width:g}x{self.height:g}"
         defs = []
         if embed_font:
             defs.append(f"<style>{self._font_face()}</style>")
         if self._uses_wash_filter:
             defs.append(self._wash_filter())
-        stroke_group = ""
-        if self.wobble == "filter":
-            defs.append(
-                f'<filter id="{filter_id}" filterUnits="userSpaceOnUse" x="0" y="0" '
-                f'width="{fmt(self.width)}" height="{fmt(self.height)}" color-interpolation-filters="sRGB">'
-                f'<feTurbulence type="fractalNoise" baseFrequency="{FINISHES[self.finish][1]}" '
-                f'numOctaves="2" seed="{self.seed}"/>'
-                f'<feDisplacementMap in="SourceGraphic" scale="{FINISHES[self.finish][0]}" '
-                'xChannelSelector="R" yChannelSelector="G"/>'
-                "</filter>"
-            )
-            stroke_group = f' filter="url(#{filter_id})"'
+        text_group = ""
+        if self.wobble == "pencil":
+            defs.append(self._grain_filter())
+            defs.append(self._lettering_filter())
+            text_group = f' filter="url(#{self._grain_id()}-text)"'
         scale_attr = "none" if self.scale_note else "n/a"
         if self.main_scale is not None and self.main_scale.declared:
             scale_attr = self.main_scale.label(self.lang)
@@ -985,16 +1087,16 @@ class Drawing:
         if defs:
             out.append("<defs>" + "".join(defs) + "</defs>")
         out.append(f'<rect id="esq-paper" width="{fmt(self.width)}" height="{fmt(self.height)}" fill="#fff"/>')
-        out.append(f'<g id="esq-geometry" {common}{stroke_group}>')
-        out.extend(self._geometry)
+        out.append(f'<g id="esq-geometry" {common}>')
+        out.extend(self._assemble(self._geometry))
         out.append("</g>")
-        out.append(f'<g id="esq-annotations" {common}{stroke_group}>')
-        out.extend(self._annotations)
+        out.append(f'<g id="esq-annotations" {common}>')
+        out.extend(self._assemble(self._annotations))
         out.append("</g>")
         out.append('<g id="esq-knockouts" fill="#fff" stroke="none">')
         out.extend(self._knockouts)
         out.append("</g>")
-        out.append(f'<g id="esq-text" font-family="{family}" fill="{style.ink}" stroke="none">')
+        out.append(f'<g id="esq-text" font-family="{family}" fill="{style.ink}" stroke="none"{text_group}>')
         out.extend(self._text)
         out.append("</g>")
         out.append("</svg>")

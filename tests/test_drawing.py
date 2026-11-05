@@ -188,20 +188,51 @@ def test_output_is_self_contained(mode: str) -> None:
     assert errors(d) == []
 
 
-def test_sketch_uses_the_tremor_filter_on_strokes_only() -> None:
+def test_sketch_strokes_are_graphite_ribbons_under_a_grain_filter() -> None:
     d = Drawing(100, 60, "sketch")
     d.line((10, 10), (90, 10))
     d.text((10, 30), "Texto", "label")
     svg = d.to_svg()
-    assert "feTurbulence" in svg and "feDisplacementMap" in svg
-    assert re.search(r'<g id="esq-geometry"[^>]*filter=', svg)
-    assert not re.search(r'<g id="esq-text"[^>]*filter=', svg)
+    assert "<line" not in svg.split('id="esq-annotations"')[0].split('id="esq-geometry"')[1]
+    assert re.search(
+        r'<g filter="url\(#esq-grain-7\)"><path d="M[^"]+Z" fill="#2e2e2e" fill-opacity="[\d.]+" stroke="none"', svg
+    )
+    assert 'filter="url(#esq-grain-7-text)"' in svg
 
 
-def test_filter_ids_differ_by_size_so_inline_svgs_do_not_clip_each_other() -> None:
-    small = Drawing(100, 60, "sketch").to_svg()
-    large = Drawing(300, 200, "sketch").to_svg()
-    assert re.search(r'<filter id="([^"]+)"', small).group(1) != re.search(r'<filter id="([^"]+)"', large).group(1)
+def test_ribbon_width_changes_along_the_stroke() -> None:
+    d = Drawing(100, 60, "sketch", seed=2)
+    d.line((10, 10), (90, 10), overshoot=False)
+    d_attr = re.search(r'<path d="([^"]+)"', d.to_svg()).group(1)
+    numbers = [float(n) for n in re.findall(r"-?\d+\.\d+", d_attr)]
+    ys = numbers[1::2]
+    half = len(ys) // 2
+    widths = [abs(a - b) for a, b in zip(ys[:half], reversed(ys[half:]), strict=False)]
+    assert max(widths) > min(widths) * 1.5
+
+
+def test_fills_stay_out_of_the_grain_so_they_keep_hiding_what_is_behind() -> None:
+    d = Drawing(100, 60, "sketch")
+    d.line((10, 30), (90, 30))
+    d.circle((50, 30), 10, fill="#fff")
+    geometry = d.to_svg().split('id="esq-geometry"')[1].split('id="esq-annotations"')[0]
+    assert '<polygon points="' in geometry
+    assert not re.search(r'<g filter="[^"]+">[^\n]*<polygon', geometry)
+
+
+def test_dashed_pencil_lines_are_cut_into_dashes() -> None:
+    d = Drawing(100, 60, "sketch")
+    d.line((10, 10), (90, 10), "hidden")
+    assert d.to_svg().count("<path") > 10
+
+
+def test_dimension_keeps_exact_ends_under_a_pencil_line() -> None:
+    d = Drawing(200, 100, "sketch")
+    v = d.view((20, 50), Scale(1, 50))
+    v.dim_h((0, 0), (2400, 0))
+    tampered = d.to_svg().replace(">2400</text>", ">3100</text>")
+    assert errors(d) == []
+    assert "DIM_MISMATCH" in [i.code for i in validate(tampered, browser=False)[0]]
 
 
 def test_technical_has_no_filter() -> None:
@@ -210,7 +241,7 @@ def test_technical_has_no_filter() -> None:
     assert "<filter" not in d.to_svg()
 
 
-def test_geometry_wobble_has_no_filter_and_is_reproducible() -> None:
+def test_geometry_wobble_is_the_same_pencil_with_no_filter() -> None:
     def build() -> str:
         d = Drawing(100, 60, "sketch", wobble="geometry", seed=3)
         d.line((10, 10), (90, 10))
@@ -223,7 +254,7 @@ def test_geometry_wobble_has_no_filter_and_is_reproducible() -> None:
     assert first == build()
 
 
-def test_filter_output_is_reproducible() -> None:
+def test_pencil_output_is_reproducible() -> None:
     def build(seed: int) -> str:
         d = Drawing(100, 60, "sketch", seed=seed)
         d.line((10, 10), (90, 10))
@@ -231,6 +262,11 @@ def test_filter_output_is_reproducible() -> None:
 
     assert build(4) == build(4)
     assert build(4) != build(5)
+
+
+def test_old_wobble_name_is_refused() -> None:
+    with pytest.raises(ValueError):
+        Drawing(100, 60, "sketch", wobble="filter")
 
 
 def test_text_is_escaped() -> None:

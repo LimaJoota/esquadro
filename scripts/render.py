@@ -3,6 +3,7 @@
 
     python scripts/render.py drawing.svg drawing.png [--dpi 150] [--gray]
     python scripts/render.py drawing.svg drawing.pdf
+    python scripts/render.py drawing.svg close.png --dpi 500 --zoom 20,30,40,25
 
 Looks for Chrome, Chromium, Edge or a Playwright Chromium; set ESQUADRO_CHROME to override, and
 ESQUADRO_CHROME_ARGS for extra flags, such as --no-sandbox in a container. The browser
@@ -22,6 +23,7 @@ import sys
 import tempfile
 from pathlib import Path
 
+MIN_WINDOW = 600.0  # CSS pixels
 NO_NETWORK = "--host-resolver-rules=MAP * ~NOTFOUND"
 CANDIDATES = (
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
@@ -87,20 +89,40 @@ def run_browser(browser: str, args: list[str], *, timeout: int = 60) -> subproce
         return subprocess.run([*command, *args], capture_output=True, text=True, timeout=timeout, check=False)
 
 
-def wrap_page(svg: str, w_mm: float, h_mm: float, *, gray: bool, background: bool = True) -> str:
+def wrap_page(svg: str, width: str, height: str, *, page: str = "", gray: bool = False) -> str:
     svg = re.sub(r"^<\?xml[^>]*\?>", "", svg.lstrip())
     gray_css = "filter:grayscale(1);" if gray else ""
     return (
         "<!doctype html><html><head><meta charset='utf-8'><style>"
-        f"@page{{size:{w_mm}mm {h_mm}mm;margin:0}}"
+        f"{page}"
         f"html,body{{margin:0;padding:0;background:#fff;{gray_css}}}"
-        "svg{display:block;width:100%;height:auto}"
+        f"svg{{display:block;width:{width};height:{height}}}"
         f"</style></head><body>{svg}</body></html>"
     )
 
 
-def render(source: Path, target: Path, *, dpi: int = 150, gray: bool = False) -> Path:
+def zoomed(svg: str, box: tuple[float, float, float, float]) -> str:
+    """The same SVG cut to a region, in the root's own units, so it can be inspected up close."""
+    x, y, w, h = box
+    return re.sub(
+        r'width="[\d.]+mm" height="[\d.]+mm" viewBox="[^"]+"',
+        f'width="{w}mm" height="{h}mm" viewBox="{x} {y} {w} {h}"',
+        svg,
+        count=1,
+    )
+
+
+def render(
+    source: Path,
+    target: Path,
+    *,
+    dpi: int = 150,
+    gray: bool = False,
+    zoom: tuple[float, float, float, float] | None = None,
+) -> Path:
     svg = source.read_text(encoding="utf-8")
+    if zoom:
+        svg = zoomed(svg, zoom)
     if UNSAFE.search(re.sub(r"data:[^)\"']+", "", svg)):
         raise ValueError("SVG contains scripts or external references; run validate.py and remove them first")
     browser = find_browser()
@@ -109,18 +131,24 @@ def render(source: Path, target: Path, *, dpi: int = 150, gray: bool = False) ->
     w_mm, h_mm = physical_size(svg)
     with tempfile.TemporaryDirectory(prefix="esquadro-page-") as tmp:
         page = Path(tmp) / "page.html"
-        page.write_text(wrap_page(svg, w_mm, h_mm, gray=gray), encoding="utf-8")
         url = page.as_uri()
         target = target.resolve()
         if target.suffix.lower() == ".pdf":
+            sheet = f"@page{{size:{w_mm}mm {h_mm}mm;margin:0}}"
+            page.write_text(wrap_page(svg, f"{w_mm}mm", f"{h_mm}mm", page=sheet, gray=gray), encoding="utf-8")
             result = run_browser(browser, ["--no-pdf-header-footer", f"--print-to-pdf={target}", url])
         else:
-            css_w, css_h = round(w_mm * 96 / 25.4), round(h_mm * 96 / 25.4)
+            # Chrome will not paint a window below its minimum size, so small drawings are laid
+            # out large and the device scale brought down: the output pixels come out the same.
+            css_w, css_h = w_mm * 96 / 25.4, h_mm * 96 / 25.4
+            grow = max(1.0, MIN_WINDOW / css_w, MIN_WINDOW / css_h)
+            win_w, win_h = round(css_w * grow), round(css_h * grow)
+            page.write_text(wrap_page(svg, f"{win_w}px", f"{win_h}px", gray=gray), encoding="utf-8")
             result = run_browser(
                 browser,
                 [
-                    f"--window-size={css_w},{css_h}",
-                    f"--force-device-scale-factor={dpi / 96:.4f}",
+                    f"--window-size={win_w},{win_h}",
+                    f"--force-device-scale-factor={dpi / 96 / grow:.5f}",
                     "--hide-scrollbars",
                     "--run-all-compositor-stages-before-draw",
                     "--virtual-time-budget=3000",
@@ -139,9 +167,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("output", type=Path, help="target .png or .pdf")
     parser.add_argument("--dpi", type=int, default=150)
     parser.add_argument("--gray", action="store_true", help="simulate a black-and-white printer")
+    parser.add_argument("--zoom", help="x,y,w,h in mm: render only this region, to inspect the line up close")
     args = parser.parse_args(argv)
     try:
-        written = render(args.svg, args.output, dpi=args.dpi, gray=args.gray)
+        box = tuple(float(v) for v in args.zoom.split(",")) if args.zoom else None
+        written = render(args.svg, args.output, dpi=args.dpi, gray=args.gray, zoom=box)
     except (ValueError, RuntimeError, OSError, subprocess.TimeoutExpired) as exc:
         sys.stderr.write(f"render failed: {exc}\n")
         return 2

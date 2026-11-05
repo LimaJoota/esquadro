@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Sketch strokes are now graphite: filled ribbons with varying pressure, tapered ends and a second pass, under a paper grain filter. `wobble="pencil"` replaces `"filter"`, and `"geometry"` is the same stroke without grain.
+- Caveat replaces Patrick Hand: the digits are clearer and it reads more like handwriting. Thinner lines and outline figures in place of stick figures.
+- `render.py --zoom x,y,w,h` to inspect a drawing up close, and the skill now requires it.
+- `render.py` no longer cuts off small drawings, which Chrome painted only up to its minimum window size.
 - `scale_note=False` for concept figures with no physical object in them.
 - `render.py` waits for every compositor stage, so a large sketch is no longer captured half painted.
 

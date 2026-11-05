@@ -20,8 +20,9 @@ Sketch is the default. Reach for `technical` mode only when the drawing will be 
 2. **Draw** with the library, in a script saved beside the output, so the drawing can be changed and regenerated. Hand-placed SVG is where labels land on top of each other.
 3. **Validate**: `python3 <skill>/scripts/validate.py out.svg`. Fix every error at its cause in the script, and read the warnings.
 4. **Render and look**: `python3 <skill>/scripts/render.py out.svg out.png`, then open the PNG with the Read tool. Ask whether it says the sentence to someone who has not read the text. The validator cannot judge that, nor a leader running through an object. Cover the numbers with your hand: can each part still be recognised by its shape? If a float is just a circle on a stick, draw it better before delivering.
-5. **Check black and white** when it will be printed: `render.py out.svg gray.png --gray`.
-6. **Deliver** the SVG, the PNG and the script. Say what was assumed, and what was not verified.
+5. **Look up close.** `render.py out.svg close.png --dpi 500 --zoom x,y,w,h` renders one region, in mm. A drawing can look fine at page size and wrong up close, and readers zoom. Check a line, a letter and a corner.
+6. **Check black and white** when it will be printed: `render.py out.svg gray.png --gray`.
+7. **Deliver** the SVG, the PNG and the script. Say what was assumed, and what was not verified.
 
 Repeat 3 and 4 after every change. If the validator reports text measured by `static` because no browser was found, say so: widths were estimated.
 
@@ -29,7 +30,7 @@ Repeat 3 and 4 after every change. If the validator reports text measured by `st
 
 | Mode | Use for | Look |
 |---|---|---|
-| `sketch` (default) | Explaining: reports, meetings, manuals, ideas | Pencil tremor on the strokes, handwritten font |
+| `sketch` (default) | Explaining: reports, meetings, manuals, ideas | Graphite strokes with paper grain, handwritten font |
 | `technical` | Parts, sections, arrangements, sheets with a title block | Clean strokes, thick and thin line weights |
 | `industrial` | Process flows, simplified P&IDs | Technical look, with process symbols |
 
@@ -127,4 +128,4 @@ Warnings: `LEADER_CROSS`, `TEXT_ON_WASH_EDGE`, `SMALL_TEXT`, `THIN_STROKE`, `LOW
 
 ## Embedding
 
-The SVG carries its own font and needs nothing else. For a document, `Figures` numbers the figures and gives cross-references: see `references/explaining.md`. In HTML, `<img src="x.svg">` or inline both work. For PDF, `render.py out.svg out.pdf` writes the true paper size. Technical drawings stay fully vector. Sketch mode's filter is rasterized by Chrome's PDF engine, at about 270 dpi in testing, with text still vector. Use `Drawing(..., wobble="geometry")` when the strokes must stay vector, or for programs that ignore SVG filters; washes then become flat translucent fills. `wash="flat"` does that for washes alone.
+The SVG carries its own font and needs nothing else. For a document, `Figures` numbers the figures and gives cross-references: see `references/explaining.md`. In HTML, `<img src="x.svg">` or inline both work. For PDF, `render.py out.svg out.pdf` writes the true paper size. Technical drawings stay fully vector. In sketch mode, Chrome's PDF engine turns the graphite and watercolour filters into images, at about 290 dpi in testing, so the lettering cannot be selected. Use `Drawing(..., wobble="geometry")` when everything must stay vector, or for programs that ignore SVG filters: same pencil strokes without the grain, and washes become flat translucent fills. `wash="flat"` does that for washes alone.

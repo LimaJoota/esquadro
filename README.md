@@ -104,7 +104,7 @@ For when the drawing will be used to measure or build. Each comes in a sheet and
 - **Things to draw with.** Boxes and cylinders in isometric perspective with hand shading, people, a truck, a building and a document.
 - **Fits in a document.** Figures sized to the A4 text width or half of it, with numbering and cross-references in HTML that stands alone.
 - **Pen and watercolour.** Red and blue inks, and washes that bleed at the edges and pool like pigment, with a flat fallback for programs that ignore SVG filters.
-- **A pencil look that stays readable.** Tremor on the strokes only, through SVG filters or computed strokes, with a handwritten font chosen so the digits are unambiguous.
+- **A pencil that holds up close.** Each stroke varies in pressure and tapers at the ends, and the paper's grain breaks the line, with a handwritten font chosen so the digits are unambiguous.
 - **Technical and industrial modes.** Clean strokes, thick and thin line weights, sheets with frame and title block, first-angle symbol, and a small set of process symbols with named ports and orthogonal connections.
 - **Dimensions from geometry.** A dimension measures the points it is given, through the view's scale. A stated value that disagrees raises an error unless it is marked not to scale, which underlines it. The validator re-checks printed numbers against the drawn lines, so a hand edit is caught too.
 - **Scale is declared or disclaimed.** The largest standard ratio that fits is chosen by calculation, or the drawing prints "SEM ESCALA" / "NOT TO SCALE".
@@ -145,7 +145,7 @@ Esquadro is younger and narrower than all of these. No code was copied from any 
 - **Not certified to any standard.** Conventions are applied from open sources, and doubts are recorded in [references/standards.md](references/standards.md). Review against the purchased standard when a contract asks for conformity.
 - **Process symbols are simplified** and unverified against ISA-5.1 or ISO 10628. Not for issuing a P&ID.
 - **Rendering tested in Chrome only.** Other browsers, Inkscape and office programs have not been tried, nor a real printer.
-- **In Chrome's PDF the sketch and watercolour filters become images** (about 270 dpi in testing). Text stays vector. `wobble="geometry"` keeps everything vector, with flat washes.
+- **In Chrome's PDF the graphite and watercolour filters become images** (about 290 dpi in testing), lettering included. `wobble="geometry"` keeps everything vector, without the grain and with flat washes.
 - **The validator misses things a person sees**, such as a leader running through an object or a cramped layout. That is why the skill also makes Claude look.
 
 The plan to close these is in [BACKLOG.md](BACKLOG.md).

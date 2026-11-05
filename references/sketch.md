@@ -5,22 +5,24 @@ How to choose the form, and the tools for explaining, are in `references/explain
 A sketch says "this is the idea, not the final design". It does not excuse wrong proportions. When the same object needs both a sketch and a technical sheet, one `draw(view)` function can serve both modes: see `examples/cargo_section.py`.
 
 ```python
-d = Drawing(180, 120, "sketch", title="...", seed=7, wobble="filter")
+d = Drawing(180, 120, "sketch", title="...", seed=7, wobble="pencil")
 ```
 
-## Tremor
+## The line
+
+Each stroke is a thin filled ribbon, not an SVG stroke, so its width and tone change along it: pressure varies, the ends taper, and a firm line sometimes gets a partial second pass. A filter adds what the paper does: the edge frays, fine grain breaks the line, and tone drifts along its length. Lettering gets a lighter version, to stay readable. Always check it up close: `render.py out.svg close.png --dpi 500 --zoom x,y,w,h`.
 
 | `wobble` | How | Best for |
 |---|---|---|
-| `"filter"` (default) | `feTurbulence` + `feDisplacementMap` over the stroke groups; text stays crisp | Browser, HTML, PNG |
-| `"geometry"` | Strokes are computed with small random deviations and stay plain paths | PDF that must be fully vector, Inkscape, office programs |
-| `"none"` | Straight strokes with the handwritten font | Very small figures |
+| `"pencil"` (default) | Ribbons with the grain filter | Browser, HTML, PNG, PDF |
+| `"geometry"` | The same ribbons, with no filter: smooth edges, stays fully vector | Inkscape, office programs, enlarging a lot |
+| `"none"` | Straight, even strokes with the handwritten font | Very small figures |
 
 `seed` makes the result repeatable. Change it if a stroke lands badly.
 
 Washes follow the same split: `wash="filter"` bleeds and pools, and `wash="flat"` is a plain translucent shape. They default to `flat` when `wobble="geometry"`.
 
-In Chrome's PDF the filter turns the strokes into an image, about 270 dpi on a figure 230 mm wide in testing, with the text still vector. That prints well but will not scale up. Other renderers were not tested: see `BACKLOG.md`.
+In Chrome's PDF the filters turn lines, letters and washes into images, at about 290 dpi in testing, so the text cannot be selected and it will not enlarge cleanly past that. Other renderers were not tested: see `BACKLOG.md`.
 
 ## What makes a sketch read well
 
