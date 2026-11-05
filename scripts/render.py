@@ -122,6 +122,7 @@ def render(source: Path, target: Path, *, dpi: int = 150, gray: bool = False) ->
                     f"--window-size={css_w},{css_h}",
                     f"--force-device-scale-factor={dpi / 96:.4f}",
                     "--hide-scrollbars",
+                    "--run-all-compositor-stages-before-draw",
                     "--virtual-time-budget=3000",
                     f"--screenshot={target}",
                     url,

@@ -1021,6 +1021,8 @@ def grow_down(corners: list[Point]) -> list[Point]:
 
 def check_scale(doc: Document, issues: list[Issue]) -> None:
     declared = doc.root.get("data-esq-scale")
+    if declared == "n/a":  # a concept figure with no physical object in it: the author said so
+        return
     text = " ".join(t.content for t in doc.texts)
     if NO_SCALE_RE.search(text):
         return

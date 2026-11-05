@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- `scale_note=False` for concept figures with no physical object in them.
+- `render.py` waits for every compositor stage, so a large sketch is no longer captured half painted.
+
 ## 0.3.0
 
 - Pen colours: `ink="red"` and `ink="blue"` on the explaining tools, and `with d.pen(...)` for anything else.

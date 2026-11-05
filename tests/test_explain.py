@@ -349,3 +349,11 @@ def test_solids_take_a_wash() -> None:
     svg = d.to_svg()
     assert svg.count('data-esq-role="wash"') == 4
     assert errors(d) == []
+
+
+def test_concept_figure_can_drop_the_scale_notice() -> None:
+    d = Drawing.figure("page", 40, scale_note=False)
+    d.text((10, 20), "Concept", "label")
+    svg = d.to_svg()
+    assert "NOT TO SCALE" not in svg and 'data-esq-scale="n/a"' in svg
+    assert errors(d) == []

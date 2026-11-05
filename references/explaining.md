@@ -92,6 +92,10 @@ Use one or two washes to separate what the reader must tell apart, such as water
 | `"study"` | The default | Reports and meetings |
 | `"clean"` | Barely trembling | Formal documents that still want a human feel |
 
+## Concept figures
+
+A figure with no physical object in it, such as a pipeline or a pyramid of ideas, has no scale to disclaim. Pass `scale_note=False` and "NOT TO SCALE" stays off. Keep the notice whenever a reader could take sizes from the drawing.
+
 ## In a document
 
 `Drawing.figure("page", h)` is 170 mm wide, `"half"` is 80 mm: the A4 text width and half of it, printed at true size. Text keeps its height, so do not scale the figure in the page, or size it there and make it again.

@@ -963,7 +963,7 @@ class Drawing:
                 "</filter>"
             )
             stroke_group = f' filter="url(#{filter_id})"'
-        scale_attr = "none"
+        scale_attr = "none" if self.scale_note else "n/a"
         if self.main_scale is not None and self.main_scale.declared:
             scale_attr = self.main_scale.label(self.lang)
         family = f"'{style.family}',{style.fallback}"
