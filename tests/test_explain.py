@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import math
+import struct
+import zlib
 from collections.abc import Callable
 from pathlib import Path
 
